@@ -234,10 +234,10 @@ Each platform creates isolated resource groups using the pattern `<PREFIX>-HSB-<
 | Platform      | Client/Networking      | HSM Resource        | Admin VM                | Logs                 |
 | ------------- | ---------------------- | ------------------- | ----------------------- | -------------------- |
 | Cloud HSM     | `CHSM-HSB-CLIENT-RG` | `CHSM-HSB-HSM-RG` | `CHSM-HSB-ADMINVM-RG` | `CHSM-HSB-LOGS-RG` |
-| Dedicated HSM | `DHSM-HSB-CLIENT-RG` | `DHSM-HSB-HSM-RG` | `DHSM-HSB-ADMINVM-RG` | —                   |
+| Dedicated HSM | `DHSM-HSB-CLIENT-RG` | `DHSM-HSB-HSM-RG` | `DHSM-HSB-ADMINVM-RG` | n/a                  |
 | Key Vault     | `AKV-HSB-CLIENT-RG`  | `AKV-HSB-HSM-RG`  | `AKV-HSB-ADMINVM-RG`  | `AKV-HSB-LOGS-RG`  |
 | Managed HSM   | `MHSM-HSB-CLIENT-RG` | `MHSM-HSB-HSM-RG` | `MHSM-HSB-ADMINVM-RG` | `MHSM-HSB-LOGS-RG` |
-| Payment HSM   | `PHSM-HSB-CLIENT-RG` | `PHSM-HSB-HSM-RG` | `PHSM-HSB-ADMINVM-RG` | —                   |
+| Payment HSM   | `PHSM-HSB-CLIENT-RG` | `PHSM-HSB-HSM-RG` | `PHSM-HSB-ADMINVM-RG` | n/a                  |
 
 > **Note:** Dedicated HSM and Payment HSM are bare-metal devices and do not support Azure Monitor/Log Analytics, so no logs resource group is created.
 
@@ -249,7 +249,7 @@ Edit the platform's `*-parameters.json` file before deploying to customize resou
 
 ## Contributing
 
-Contributions are welcome!
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution process, CLA requirements, and style guidelines.
 
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/my-feature`)
@@ -259,6 +259,24 @@ Contributions are welcome!
 
 ---
 
+## Security
+
+If you discover a security vulnerability, please follow the private disclosure process described in [SECURITY.md](SECURITY.md). Do not open a public issue.
+
+---
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+---
+
+## Trademarks
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos is subject to those third-party's policies.
+
+---
+
 ## License
 
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
