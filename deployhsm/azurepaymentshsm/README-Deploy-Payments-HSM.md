@@ -8,6 +8,24 @@ Azure Payment HSM is a bare-metal, single-tenant service designed for **payment 
 
 > **Note:** Azure Payment HSM is a bare-metal device and does **NOT** support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the payShield Manager console.
 
+## Prerequisites
+
+> **Important:** Azure Payment HSM is a **limited-availability service**. Deployment is gated by Microsoft and requires a sponsored business case before a subscription can provision the resource.
+
+Before attempting to deploy with this template:
+
+1. **Engage your Microsoft account team.** Contact your Microsoft Account Manager and Cloud Solution Architect (CSA) to discuss your payment processing scenario, expected transaction volume, regulatory requirements (PCI DSS, PCI PIN, regional compliance), and target deployment region.
+
+2. **Submit a business case for approval.** Your account team will sponsor and submit your subscription for Payment HSM enablement through the official Microsoft Payment HSM onboarding process. Approval is not self-service and requires a documented business justification.
+
+3. **Confirm subscription enablement before deploying.** You will be notified once your subscription has been approved and the required platform enablements are in place. Attempting to deploy before approval completes will result in `InvalidResourceType` errors during ARM provisioning.
+
+4. **Plan your network architecture.** Payment HSM uses VNet injection with two delegated subnets (data plane and management plane). Review the [Network Architecture](#network-architecture) section below and confirm your VNet address space, subnet CIDRs, and connectivity patterns (ExpressRoute, VPN, peered hub VNets) before deployment.
+
+5. **Choose your region carefully.** Payment HSM is available in a limited set of Azure regions. Confirm regional availability with your account team during the qualification conversation -- the SKU and region must both be approved as part of your business case.
+
+For an overview of the service, supported regions, and SKUs, see the [Azure Payment HSM documentation](https://learn.microsoft.com/azure/payment-hsm/overview).
+
 ## What Gets Deployed
 
 | Resource Group | Resources |
