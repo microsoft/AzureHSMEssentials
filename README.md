@@ -50,19 +50,19 @@ Each platform deployment creates isolated resource groups with production-grade 
 
 ```
                     ┌──────────────────────────────────────┐
-                    │        HSM Scenario Builder           │
+                    │       HSM Scenario Builder           │
                     │                                      │
                     │   deploy-hsm.ps1  /  deploy-hsm.sh   │
-                    │   uninstall-hsm.ps1 / uninstall-hsm.sh│
+                    │  uninstall-hsm.ps1 / uninstall-hsm.sh│
                     └──────────────┬───────────────────────┘
                                    │
               ┌────────────────────┼────────────────────┐
-              ▼                    ▼                     ▼
+              ▼                    ▼                    ▼
    ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-   │  ARM Template    │  │  ARM Template    │  │  ARM Template    │
-   │  + Parameters    │  │  + Parameters    │  │  + Parameters    │
+   │  ARM Template   │  │  ARM Template   │  │  ARM Template   │
+   │  + Parameters   │  │  + Parameters   │  │  + Parameters   │
    └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
-            ▼                    ▼                     ▼
+            ▼                    ▼                    ▼
    ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
    │ Azure Cloud HSM │  │ Azure Key Vault │  │ Azure Managed   │
    │ Azure Dedicated │  │                 │  │ HSM             │
@@ -82,8 +82,8 @@ Each platform deployment creates isolated resource groups with production-grade 
    Optional VPN Gateway (-EnableVpnGateway):
    ┌──────────────────────────────────────────────┐
    │  VPN Gateway (VpnGw1) + GatewaySubnet        │
-   │  OpenVPN P2S for remote/WFH access            │
-   │  Deployed into the CLIENT-RG VNet             │
+   │  OpenVPN P2S for remote/WFH access           │
+   │  Deployed into the CLIENT-RG VNet            │
    └──────────────────────────────────────────────┘
 ```
 
