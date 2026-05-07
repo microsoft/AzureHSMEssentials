@@ -11,7 +11,7 @@
 
 # HSM Scenario Builder
 
-**One-command deployment of fully configured Azure HSM platforms for testing, demos, and partner conversations.**
+**One-command deployment of fully configured Azure HSM platforms for evaluation, proof-of-concept, and production reference architectures.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
