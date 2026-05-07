@@ -219,6 +219,16 @@ hsm-scenario-builder/
 │   ├── azurepaymentshsm/README.md
 │   └── vpngateway/                           # VPN Gateway removal
 │       └── uninstall-vpn-gateway.ps1
+├── migration/                                # Migration toolkits (HSM-to-HSM, on-prem-to-HSM)
+│   └── adcs-migration/                       # Active Directory Certificate Services CA migration
+│       ├── docs/                             # Per-scenario migration guides
+│       ├── scripts/                          # Step1-Step8 orchestration per scenario
+│       │   ├── Invoke-CaMigration.ps1        # Top-level migration orchestrator
+│       │   ├── Reset-MigrationEnvironment.ps1
+│       │   ├── migration-params.template.json
+│       │   ├── root-ca-migration/            # Root CA scenarios (chain-pre-distributed, cross-signed)
+│       │   └── intermediate-issuing-ca-migration/  # Issuing CA scenarios
+│       └── tests/                            # Live-migration validation harness
 ├── tests/                                    # Test suite
 └── azure_functions/                          # Optional Azure Functions
 ```
@@ -244,6 +254,29 @@ Each platform creates isolated resource groups using the pattern `<PREFIX>-HSB-<
 ### Customization
 
 Edit the platform's `*-parameters.json` file before deploying to customize resource group names, locations, networking CIDRs, SKUs, and other settings. See each platform's README for the full parameter reference.
+
+---
+
+## Migration Toolkits
+
+In addition to greenfield HSM deployments (covered above), this repository ships migration toolkits for cutting over Azure Dedicated HSM to Azure Cloud HSM for ADCS workloads. Because Azure Dedicated HSM private keys are non-exportable by design, these migrations stand up a parallel CA on the target HSM and establish trust between the existing and new CAs during a controlled cutover window. The existing CA, its private key, and all previously issued certificates remain in place and valid throughout the process. Each toolkit is scenario-driven, parameter-file controlled, and broken into discrete validated steps so you can pause, audit, and resume between phases.
+
+### `migration/adcs-migration/` -- Active Directory Certificate Services
+
+Migrates an existing Active Directory Certificate Services CA from Azure Dedicated HSM to Azure Cloud HSM, preserving CA identity, certificate validity, and existing issued-cert chains. The primary scenario is **Azure Dedicated HSM (Thales Luna KSP) to Azure Cloud HSM (Cavium / Marvell LiquidSecurity KSP)**. The same toolkit also applies to other HSM-to-HSM CA migrations where the source and target both expose a Windows KSP/CSP provider (for example, on-premises Luna to Azure Cloud HSM).
+
+Because HSM private keys are non-exportable by design, the toolkit takes a **parallel-CA** approach rather than a key-export-and-import. A new CA is provisioned on the target HSM with its own key pair, and trust is established between the existing CA and the new CA using one of two cutover strategies. The existing CA continues to operate untouched; previously issued certificates remain valid until their natural expiry. It supports both Root CA and Issuing/Intermediate CA tiers:
+
+| Tier                 | Strategy        | When to use                                                                                       |
+| -------------------- | --------------- | ------------------------------------------------------------------------------------------------- |
+| **Root CA**    | Pre-distributed | Greenfield trust rollout. New root cert is distributed and trusted before any cutover.            |
+| **Root CA**    | Cross-signed    | Existing trust must be preserved. Old root cross-signs new root; both validate during transition. |
+| **Issuing CA** | Pre-distributed | New issuing CA is published before old CA stops issuing. Workloads switch in a planned window.    |
+| **Issuing CA** | Cross-signed    | Old issuing CA cross-signs the new one for seamless chain bridging during phased rollout.         |
+
+Each scenario is delivered as 8 numbered PowerShell steps (`Step1-CaptureExistingCA.ps1` through `Step8-DecommissionChecks.ps1`) plus a top-level orchestrator (`Invoke-CaMigration.ps1`) and a JSON parameter file describing source server, target server, parent CA, and cryptographic settings.
+
+**Start here:** [`migration/adcs-migration/docs/_README_migration.md`](migration/adcs-migration/docs/_README_migration.md)
 
 ---
 
@@ -273,7 +306,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Trademarks
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos is subject to those third-party's policies.
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft&#39;s Trademark &amp; Brand Guidelines](https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general). Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos is subject to those third-party's policies.
 
 ---
 
