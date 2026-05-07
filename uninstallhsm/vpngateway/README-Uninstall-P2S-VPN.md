@@ -1,4 +1,4 @@
-# VPN Gateway Uninstall — HSM Scenario Builder
+# VPN Gateway Uninstall -- HSM Scenario Builder
 
 Removes the Point-to-Site VPN Gateway and related resources from any HSM platform VNet,
 without affecting the base HSM deployment, Admin VM, or client VNet.
@@ -55,7 +55,7 @@ without affecting the base HSM deployment, Admin VM, or client VNet.
 | VPN Gateway            | Yes      |
 | Public IP (Static)     | Yes      |
 | Local P2S certificates | Only with `-RemoveLocalCerts` |
-| GatewaySubnet          | No — remains in VNet (empty, no cost) |
+| GatewaySubnet          | No -- remains in VNet (empty, no cost) |
 | VNet / other subnets   | No       |
 | HSM resources          | No       |
 | Admin VM               | No       |
@@ -65,7 +65,7 @@ without affecting the base HSM deployment, Admin VM, or client VNet.
 ## Full Platform Uninstall
 
 If you are removing the entire HSM deployment (not just the VPN Gateway),
-use `uninstall-hsm.ps1` instead — it deletes all resource groups including
+use `uninstall-hsm.ps1` instead -- it deletes all resource groups including
 the client RG that contains the VPN Gateway:
 
 ```powershell

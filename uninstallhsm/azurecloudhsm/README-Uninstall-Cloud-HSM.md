@@ -12,7 +12,7 @@ Resources are removed in this order to respect dependencies:
 
 | Step | Resource Group | Resources Deleted |
 |---|---|---|
-| 1 | CHSM-HSB-ADMINVM-RG | Admin VM, public IP, NSG, NIC (if deployed) — must be deleted first because the NIC references the client VNet subnet |
+| 1 | CHSM-HSB-ADMINVM-RG | Admin VM, public IP, NSG, NIC (if deployed) -- must be deleted first because the NIC references the client VNet subnet |
 | 2 | CHSM-HSB-CLIENT-RG | Private endpoint, DNS zone group, private DNS zone, VNet link, VNet + subnet |
 | 3 | CHSM-HSB-HSM-RG | Cloud HSM cluster |
 | 4 | CHSM-HSB-LOGS-RG | Storage Account, Log Analytics Workspace (deleted last to preserve diagnostic data longest) |
@@ -119,7 +119,7 @@ If you used custom resource group names during deployment, the scripts read them
 
 ## VPN Gateway
 
-If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `CHSM-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) — no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
+If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `CHSM-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) -- no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
 
 To remove **only** the VPN Gateway while keeping the HSM deployment intact:
 

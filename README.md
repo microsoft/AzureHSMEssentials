@@ -19,7 +19,7 @@
 
 ## Overview
 
-Setting up Azure HSM environments manually is time-consuming and error-prone — VNets, private endpoints, DNS zones, subnets, firewalls, diagnostic logging, admin VMs, and more. **HSM Scenario Builder** automates all of that into a single deploy command.
+Setting up Azure HSM environments manually is time-consuming and error-prone -- VNets, private endpoints, DNS zones, subnets, firewalls, diagnostic logging, admin VMs, and more. **HSM Scenario Builder** automates all of that into a single deploy command.
 
 Give it to PMs, engineers, or field teams so they can spin up a fully-configured HSM platform in minutes, run their tests or partner demos, and tear it down cleanly when done.
 
@@ -37,12 +37,12 @@ Give it to PMs, engineers, or field teams so they can spin up a fully-configured
 
 Each platform deployment creates isolated resource groups with production-grade networking and security:
 
-- **Networking** — VNet, subnets, private endpoint (or VNet injection), private DNS zone, DNS-VNet link
-- **HSM resource** — The HSM platform itself, fully configured
-- **Diagnostic logging** — Storage Account + Log Analytics Workspace with audit log routing (where supported)
-- **Admin VM** *(optional)* — Ubuntu 24.04 LTS jumpbox connected to the HSM VNet for administration
-- **P2S VPN Gateway** *(optional)* — Point-to-Site VPN for remote/WFH access into the HSM VNet via OpenVPN
-- **Clean teardown** — Matching uninstall scripts delete all resource groups in the correct dependency order
+- **Networking** -- VNet, subnets, private endpoint (or VNet injection), private DNS zone, DNS-VNet link
+- **HSM resource** -- The HSM platform itself, fully configured
+- **Diagnostic logging** -- Storage Account + Log Analytics Workspace with audit log routing (where supported)
+- **Admin VM** *(optional)* -- Ubuntu 24.04 LTS jumpbox connected to the HSM VNet for administration
+- **P2S VPN Gateway** *(optional)* -- Point-to-Site VPN for remote/WFH access into the HSM VNet via OpenVPN
+- **Clean teardown** -- Matching uninstall scripts delete all resource groups in the correct dependency order
 
 ---
 

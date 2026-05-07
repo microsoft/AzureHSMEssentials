@@ -1,4 +1,4 @@
-# Uninstall ADCS VM — Azure Cloud HSM & Dedicated HSM
+# Uninstall ADCS VM -- Azure Cloud HSM & Dedicated HSM
 
 This folder contains `uninstall-adcs-vm.ps1` which **removes the ADCS scenario VM** and all its resources for a given HSM platform.
 

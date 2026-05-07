@@ -24,7 +24,7 @@ Your Workstation                       Azure
 ### 1. Deploy the HSM with VPN Gateway
 
 ```powershell
-# From the deployhsm/ directory — add -EnableVpnGateway to any platform:
+# From the deployhsm/ directory -- add -EnableVpnGateway to any platform:
 .\deploy-hsm.ps1 -Platform AzureCloudHSM `
     -SubscriptionId "<YOUR_SUBSCRIPTION_ID>" `
     -AdminPasswordOrKey (Read-Host -AsSecureString -Prompt "Admin password") `
@@ -118,7 +118,7 @@ This deletes the VPN Gateway and public IP (takes 15-30 min), and optionally rem
 
 ### Full Platform Uninstall
 
-`uninstall-hsm.ps1` deletes the entire client RG which includes the VPN Gateway. No extra steps needed — just be aware the uninstall will take longer (~30 min extra) if a VPN Gateway is present.
+`uninstall-hsm.ps1` deletes the entire client RG which includes the VPN Gateway. No extra steps needed -- just be aware the uninstall will take longer (~30 min extra) if a VPN Gateway is present.
 
 ---
 
@@ -126,7 +126,7 @@ This deletes the VPN Gateway and public IP (takes 15-30 min), and optionally rem
 
 | File | Description |
 |---|---|
-| `deployhsm/vpngateway/P2S VPN Gateway/vpngw-deploy.json` | ARM template — GatewaySubnet, public IP, VPN Gateway |
+| `deployhsm/vpngateway/P2S VPN Gateway/vpngw-deploy.json` | ARM template -- GatewaySubnet, public IP, VPN Gateway |
 | `deployhsm/vpngateway/P2S VPN Gateway/setup-vpn-certs.ps1` | Generates P2S certs, uploads root cert, downloads VPN client config |
 | `uninstallhsm/vpngateway/uninstall-vpn-gateway.ps1` | Removes VPN Gateway, public IP, and optionally local certs |
 
@@ -136,9 +136,9 @@ This deletes the VPN Gateway and public IP (takes 15-30 min), and optionally rem
 
 | Issue | Solution |
 |---|---|
-| VPN Gateway deployment takes too long | Normal — VPN Gateways take 20-45 minutes to provision. The main HSM deployment is already complete. |
+| VPN Gateway deployment takes too long | Normal -- VPN Gateways take 20-45 minutes to provision. The main HSM deployment is already complete. |
 | `ResourceGroupBeingDeleted` on redeploy | Wait 2-5 minutes after uninstall for Azure to finish deprovisioning, then retry. |
-| Certificate not found in Azure VPN Client | Run `setup-vpn-certs.ps1` again — it checks for existing certs and re-uploads if needed. |
+| Certificate not found in Azure VPN Client | Run `setup-vpn-certs.ps1` again -- it checks for existing certs and re-uploads if needed. |
 | `P2SChildCert` not showing in VPN client | Ensure the cert is in `CurrentUser\My`. Open `certmgr.msc` > Personal > Certificates to verify. |
 | Dedicated HSM already has GatewaySubnet | The ARM template updates the existing subnet. The VPN Gateway coexists with the ExpressRoute gateway. |
 

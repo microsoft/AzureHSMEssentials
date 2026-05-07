@@ -1,11 +1,11 @@
-﻿<#
+<#
 .SYNOPSIS
     Step 2 of 2: Configures ADCS as a Root CA or Issuing (Subordinate) CA
     using an HSM-backed Key Storage Provider (Azure Cloud HSM or Azure
     Dedicated HSM).
 
 .DESCRIPTION
-    ADCS Scenario — Step 2 of 2: Configure CA
+    ADCS Scenario -- Step 2 of 2: Configure CA
 
     Automates the full ADCS CA configuration on a Windows Server VM
     that already has the HSM client/SDK installed.
@@ -13,8 +13,8 @@
     Supports both Root CA and Subordinate (Issuing) CA configurations.
 
     Supported platforms:
-      - AzureCloudHSM     — Cavium Key Storage Provider (Marvell LiquidSecurity)
-      - AzureDedicatedHSM — SafeNet Key Storage Provider (Thales Luna Network HSM)
+      - AzureCloudHSM     -- Cavium Key Storage Provider (Marvell LiquidSecurity)
+      - AzureDedicatedHSM -- SafeNet Key Storage Provider (Thales Luna Network HSM)
 
     Root CA flow (StandaloneRootCA / EnterpriseRootCA):
       1. Validates prerequisites (OS, KSP registered, no existing CA)
@@ -26,15 +26,15 @@
 
     Subordinate CA flow (StandaloneSubordinateCA / EnterpriseSubordinateCA):
       1-3. Same as Root CA
-      4. Configures Subordinate CA — generates a CSR (.req file)
+      4. Configures Subordinate CA -- generates a CSR (.req file)
       5. Submits CSR to the parent Root CA and retrieves the signed certificate
       6. Installs the signed certificate and starts the CA service
       7. Validates the CA is operational with correct chain
       8. Locks down registry settings and backs up the CA configuration
 
     Workflow:
-      Step 1 — deploy-adcs-vm.ps1    Deploy the ADCS VM
-      Step 2 — configure-adcs.ps1    (this script) Configure CA with HSM KSP
+      Step 1 -- deploy-adcs-vm.ps1    Deploy the ADCS VM
+      Step 2 -- configure-adcs.ps1    (this script) Configure CA with HSM KSP
 
     IMPORTANT: The HSM client/SDK must be installed BEFORE running this script.
       - Cloud HSM: Install the Azure Cloud HSM SDK (provides Cavium KSP)
@@ -54,8 +54,8 @@
 .PARAMETER Platform
     The HSM platform backing the ADCS deployment (default: AzureCloudHSM).
     Valid values: AzureCloudHSM, AzureDedicatedHSM
-      AzureCloudHSM     — Uses Cavium Key Storage Provider (Marvell/Cloud HSM SDK)
-      AzureDedicatedHSM — Uses SafeNet Key Storage Provider (Thales Luna Client)
+      AzureCloudHSM     -- Uses Cavium Key Storage Provider (Marvell/Cloud HSM SDK)
+      AzureDedicatedHSM -- Uses SafeNet Key Storage Provider (Thales Luna Client)
 
 .PARAMETER CACommonName
     The Common Name for the Root CA certificate (required).
@@ -92,10 +92,10 @@
       Cloud HSM:     "RSA#Cavium Key Storage Provider"
       Dedicated HSM: "RSA#SafeNet Key Storage Provider"
     Valid algorithms and key lengths:
-      RSA         — key lengths: 2048, 3072, 4096
-      ECDSA_P256  — key length: 256 (fixed)
-      ECDSA_P384  — key length: 384 (fixed)
-      ECDSA_P521  — key length: 521 (fixed)
+      RSA         -- key lengths: 2048, 3072, 4096
+      ECDSA_P256  -- key length: 256 (fixed)
+      ECDSA_P384  -- key length: 384 (fixed)
+      ECDSA_P521  -- key length: 521 (fixed)
 
 .PARAMETER KeyLength
     Key length in bits (default: 2048).
@@ -437,10 +437,10 @@ function Add-CheckResult {
 # ═══════════════════════════════════════════════════════════════════════
 # The Cavium KSP requires two system environment variables to authenticate
 # to Azure Cloud HSM. These must be set BEFORE the KSP can operate.
-# SafeNet KSP (Dedicated HSM) does NOT use environment variables — it
+# SafeNet KSP (Dedicated HSM) does NOT use environment variables -- it
 # authenticates via slot registration in KspConfig.exe.
-#   azcloudhsm_username — Crypto User name (e.g. "cu1")
-#   azcloudhsm_password — Crypto User credentials (e.g. "cu1:user1234")
+#   azcloudhsm_username -- Crypto User name (e.g. "cu1")
+#   azcloudhsm_password -- Crypto User credentials (e.g. "cu1:user1234")
 
 if ($isCloudHSM) {
 
@@ -448,7 +448,7 @@ $existingHsmUser = [System.Environment]::GetEnvironmentVariable('azcloudhsm_user
 $existingHsmPass = [System.Environment]::GetEnvironmentVariable('azcloudhsm_password', 'Machine')
 
 if ($HsmUsername -and $HsmPassword) {
-    # Set from parameters — compose azcloudhsm_password as "username:password"
+    # Set from parameters -- compose azcloudhsm_password as "username:password"
     $plainPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
         [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($HsmPassword)
     )
@@ -464,13 +464,13 @@ if ($HsmUsername -and $HsmPassword) {
     Write-Host "         azcloudhsm_username = $HsmUsername" -ForegroundColor Gray
     Write-Host "         azcloudhsm_password = ${HsmUsername}:********" -ForegroundColor Gray
 } elseif ($existingHsmUser -and $existingHsmPass) {
-    # Already set — use existing
+    # Already set -- use existing
     $env:azcloudhsm_username = $existingHsmUser
     $env:azcloudhsm_password = $existingHsmPass
     Write-Host "  [INFO] Using existing Cloud HSM credentials from system environment variables" -ForegroundColor Gray
     Write-Host "         azcloudhsm_username = $existingHsmUser" -ForegroundColor Gray
 } else {
-    # Not provided and not set — prompt
+    # Not provided and not set -- prompt
     Write-Host "" -ForegroundColor White
     Write-Host "  The Cavium KSP requires Cloud HSM Crypto User credentials." -ForegroundColor Yellow
     Write-Host "  These are set as system environment variables:" -ForegroundColor Yellow
@@ -500,7 +500,7 @@ if ($HsmUsername -and $HsmPassword) {
 }
 
 } else {
-    # AzureDedicatedHSM — no environment variables needed
+    # AzureDedicatedHSM -- no environment variables needed
     Write-Host "  [INFO] Dedicated HSM: SafeNet KSP authenticates via registered slot (no env vars needed)" -ForegroundColor Gray
 }
 Write-Host ""
@@ -618,7 +618,7 @@ if ($isCloudHSM) {
 } else {
     # --- AzureDedicatedHSM: Check Luna Client installation ---
     # SafeNet KSP is registered via KspConfig.exe during Luna Client setup.
-    # No background service is needed — NTLS connectivity is via Chrystoki.conf.
+    # No background service is needed -- NTLS connectivity is via Chrystoki.conf.
     $lunaClientPath = "C:\Program Files\SafeNet\LunaClient"
     $lunaKspPath    = Join-Path $lunaClientPath "KSP"
     $kspConfigExe   = Join-Path $lunaKspPath "KspConfig.exe"
@@ -730,7 +730,7 @@ try {
         $existingCA = $true
     }
 } catch {
-    # No CA configured — this is the expected state
+    # No CA configured -- this is the expected state
 }
 
 if ($existingCA -and -not $OverwriteExisting) {
@@ -1073,7 +1073,7 @@ Write-Host ""
 try {
     $configResult = Install-AdcsCertificationAuthority @caParams -ErrorAction Stop
     if ($isSubordinate) {
-        Write-Host "  [PASS] Subordinate CA configured — CSR generated." -ForegroundColor Green
+        Write-Host "  [PASS] Subordinate CA configured -- CSR generated." -ForegroundColor Green
         Write-Host "         CSR file: $OutputRequestFile" -ForegroundColor Gray
     } else {
         Write-Host "  [PASS] Root CA configured successfully." -ForegroundColor Green
@@ -1174,7 +1174,7 @@ if ($isSubordinate) {
             Write-Host "    Start-Service certsvc" -ForegroundColor Cyan
             Write-Host ""
             Write-Host "  ────────────────────────────────────────────────────" -ForegroundColor Gray
-            Write-Host "  Subordinate CA configuration PAUSED — waiting for Root CA approval." -ForegroundColor Yellow
+            Write-Host "  Subordinate CA configuration PAUSED -- waiting for Root CA approval." -ForegroundColor Yellow
             Write-Host "  Re-run this script with -OverwriteExisting after installing the cert," -ForegroundColor Yellow
             Write-Host "  or complete the remaining steps manually." -ForegroundColor Yellow
             Write-Host "  ────────────────────────────────────────────────────" -ForegroundColor Gray
@@ -1224,7 +1224,7 @@ if ($isSubordinate) {
         exit 1
     }
 
-    # Start the CA service — it cannot start until the cert is installed
+    # Start the CA service -- it cannot start until the cert is installed
     Write-Host ""
     Write-Host "  Starting Certificate Services..." -ForegroundColor Gray
     try {
@@ -1325,7 +1325,7 @@ try {
         if ($isSubordinate) {
             # Subordinate: issuer must differ from subject (signed by parent)
             Add-PostCheck -Name "Signed by Parent CA" -Passed (-not $isSelfSigned) `
-                -Detail $(if (-not $isSelfSigned) { "Issuer: $issuer (parent-signed)" } else { "ERROR: Certificate is self-signed — expected parent-signed" })
+                -Detail $(if (-not $isSelfSigned) { "Issuer: $issuer (parent-signed)" } else { "ERROR: Certificate is self-signed -- expected parent-signed" })
         } else {
             Add-PostCheck -Name "Self-Signed Root" -Passed $isSelfSigned `
                 -Detail $(if ($isSelfSigned) { "Confirmed self-signed root CA" } else { "Issuer does not match subject" })
@@ -1473,10 +1473,10 @@ try {
 
 # --- 6c: Set InterfaceFlags for security hardening ---
 # Matches real ADCS config: 0x641 (1601)
-#   IF_LOCKICERTREQUEST (0x1)          — Lock down ICertRequest interface
-#   IF_NOREMOTEICERTADMINBACKUP (0x40) — Prevent remote CA backup
-#   IF_ENFORCEENCRYPTICERTREQUEST (0x200) — Enforce encryption on cert requests
-#   IF_ENFORCEENCRYPTICERTADMIN (0x400)   — Enforce encryption on admin interface
+#   IF_LOCKICERTREQUEST (0x1)          -- Lock down ICertRequest interface
+#   IF_NOREMOTEICERTADMINBACKUP (0x40) -- Prevent remote CA backup
+#   IF_ENFORCEENCRYPTICERTREQUEST (0x200) -- Enforce encryption on cert requests
+#   IF_ENFORCEENCRYPTICERTADMIN (0x400)   -- Enforce encryption on admin interface
 try {
     certutil -setreg CA\InterfaceFlags +IF_LOCKICERTREQUEST 2>&1 | Out-Null
     certutil -setreg CA\InterfaceFlags +IF_NOREMOTEICERTADMINBACKUP 2>&1 | Out-Null
@@ -1517,7 +1517,7 @@ if (-not $DisableBackup) {
             New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
         }
 
-        # Backup CA database only — private key lives in the HSM and cannot
+        # Backup CA database only -- private key lives in the HSM and cannot
         # be exported via certutil -backup (which hangs waiting for HSM
         # interactive approval on Cloud HSM / Cavium KSP or Dedicated HSM / SafeNet KSP).
         $dbBackupResult = certutil -backupDB $backupDir 2>&1

@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploys Azure Payment HSM (Thales payShield 10K) with networking, VNet injection via delegated subnet, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking (VNet with compute, HSM, and management subnets), the Payment HSM, and (optionally) an admin virtual machine. Azure Payment HSM is a bare-metal, single-tenant device — it does NOT support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the payShield Manager console."
+    "description": "Deploys Azure Payment HSM (Thales payShield 10K) with networking, VNet injection via delegated subnet, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking (VNet with compute, HSM, and management subnets), the Payment HSM, and (optionally) an admin virtual machine. Azure Payment HSM is a bare-metal, single-tenant device -- it does NOT support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the payShield Manager console."
   },
   "parameters": {
     "location": {

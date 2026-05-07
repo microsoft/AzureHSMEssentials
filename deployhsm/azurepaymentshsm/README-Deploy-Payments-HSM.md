@@ -1,10 +1,10 @@
-# Azure Payment HSM — ARM Deployment Template
+# Azure Payment HSM -- ARM Deployment Template
 
 ## Overview
 
 This ARM template deploys an **Azure Payment HSM** (Thales payShield 10K) using VNet injection via a delegated subnet, along with an optional admin virtual machine.
 
-Azure Payment HSM is a bare-metal, single-tenant service designed for **payment processing workloads** — cryptographic key operations such as PIN processing, payment credential issuing, transaction authorization, and payment data protection. It uses the same Azure resource provider as Azure Dedicated HSM (`Microsoft.HardwareSecurityModules/dedicatedHSMs`) but with `payShield10K` SKUs.
+Azure Payment HSM is a bare-metal, single-tenant service designed for **payment processing workloads** -- cryptographic key operations such as PIN processing, payment credential issuing, transaction authorization, and payment data protection. It uses the same Azure resource provider as Azure Dedicated HSM (`Microsoft.HardwareSecurityModules/dedicatedHSMs`) but with `payShield10K` SKUs.
 
 > **Note:** Azure Payment HSM is a bare-metal device and does **NOT** support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the payShield Manager console.
 
@@ -12,9 +12,9 @@ Azure Payment HSM is a bare-metal, single-tenant service designed for **payment 
 
 | Resource Group | Resources |
 |---|---|
-| `PHSM-HSB-CLIENT-RG` | VNet with 3 subnets: `default` (admin VM), `hsmSubnet` (delegated — HSM data), `hsmMgmtSubnet` (delegated — HSM management) |
+| `PHSM-HSB-CLIENT-RG` | VNet with 3 subnets: `default` (admin VM), `hsmSubnet` (delegated -- HSM data), `hsmMgmtSubnet` (delegated -- HSM management) |
 | `PHSM-HSB-HSM-RG` | Payment HSM resource (payShield 10K) |
-| `PHSM-HSB-ADMINVM-RG` | Admin VM + NIC + NSG + Public IP *(conditional — only if `adminPasswordOrKey` is provided)* |
+| `PHSM-HSB-ADMINVM-RG` | Admin VM + NIC + NSG + Public IP *(conditional -- only if `adminPasswordOrKey` is provided)* |
 
 ## SKU Options
 
@@ -27,9 +27,9 @@ Azure Payment HSM is a bare-metal, single-tenant service designed for **payment 
 | `payShield10K_LMK2_CPS250` | LMK2 (AES-256) | 250 |
 | `payShield10K_LMK2_CPS2500` | LMK2 (AES-256) | 2,500 |
 
-- **LMK1**: Legacy Local Master Key type (3DES-based) — for existing payShield deployments
-- **LMK2**: Modern Local Master Key type (AES-256-based) — recommended for new deployments
-- **CPS**: Cryptographic operations per second — select based on transaction volume requirements
+- **LMK1**: Legacy Local Master Key type (3DES-based) -- for existing payShield deployments
+- **LMK2**: Modern Local Master Key type (AES-256-based) -- recommended for new deployments
+- **CPS**: Cryptographic operations per second -- select based on transaction volume requirements
 
 ## Network Architecture
 
@@ -37,9 +37,9 @@ Azure Payment HSM uses **VNet injection** (not private endpoints). The HSM is de
 
 ```
 VNet (10.4.0.0/16)
-├── default          (10.4.0.0/24) — Admin VM, general resources
-├── hsmSubnet        (10.4.1.0/24) — Delegated to dedicatedHSMs (data plane)
-└── hsmMgmtSubnet    (10.4.2.0/24) — Delegated to dedicatedHSMs (management plane)
+├── default          (10.4.0.0/24) -- Admin VM, general resources
+├── hsmSubnet        (10.4.1.0/24) -- Delegated to dedicatedHSMs (data plane)
+└── hsmMgmtSubnet    (10.4.2.0/24) -- Delegated to dedicatedHSMs (management plane)
 ```
 
 ## Deployment
@@ -102,7 +102,7 @@ New-AzSubscriptionDeployment `
 | `paymentHsmName` | *(auto-generated)* | Payment HSM resource name |
 | `hsmSkuName` | `payShield10K_LMK1_CPS60` | Payment HSM SKU |
 | `stampId` | `stamp1` | Availability zone stamp |
-| `adminPasswordOrKey` | *(empty — no VM)* | SSH key or password to deploy admin VM |
+| `adminPasswordOrKey` | *(empty -- no VM)* | SSH key or password to deploy admin VM |
 
 ---
 

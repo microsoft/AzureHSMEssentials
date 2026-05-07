@@ -70,9 +70,9 @@ az eventhubs namespace create `
 
 **Key options:**
 
-- `--sku Standard` — Basic tier does **not** support Diagnostic Settings as a destination
-- `--capacity 1` — 1 throughput unit (1 MB/s ingress, 2 MB/s egress) — plenty for HSM audit logs
-- `--enable-auto-inflate false` — HSM log volume is low; auto-inflate is unnecessary
+- `--sku Standard` -- Basic tier does **not** support Diagnostic Settings as a destination
+- `--capacity 1` -- 1 throughput unit (1 MB/s ingress, 2 MB/s egress) -- plenty for HSM audit logs
+- `--enable-auto-inflate false` -- HSM log volume is low; auto-inflate is unnecessary
 
 ---
 
@@ -90,9 +90,9 @@ az eventhubs eventhub create `
 
 **Key options:**
 
-- `--partition-count 2` — 2 partitions is sufficient for HSM audit log throughput
-- `--retention-time-in-hours 168` — Keep messages for 7 days (168 hours; max 168 for Standard tier)
-- `--cleanup-policy Delete` — Delete messages after retention period expires
+- `--partition-count 2` -- 2 partitions is sufficient for HSM audit log throughput
+- `--retention-time-in-hours 168` -- Keep messages for 7 days (168 hours; max 168 for Standard tier)
+- `--cleanup-policy Delete` -- Delete messages after retention period expires
 
 ---
 
@@ -122,7 +122,7 @@ az eventhubs namespace authorization-rule create `
   --rights Send
 ```
 
-> **Security note:** This rule only grants `Send` — not `Listen` or `Manage`. Follow least-privilege. Your downstream consumers (Azure Functions, Stream Analytics, etc.) will use a separate rule with `Listen`.
+> **Security note:** This rule only grants `Send` -- not `Listen` or `Manage`. Follow least-privilege. Your downstream consumers (Azure Functions, Stream Analytics, etc.) will use a separate rule with `Listen`.
 
 ---
 
@@ -140,7 +140,7 @@ $authRuleId = az eventhubs namespace authorization-rule show `
 Write-Host "Auth Rule ID: $authRuleId"
 ```
 
-Save this value — you'll use it in the next step.
+Save this value -- you'll use it in the next step.
 
 ---
 
@@ -199,7 +199,7 @@ az monitor diagnostic-settings create `
   --logs '[{\"category\":\"<log-category>\",\"enabled\":true}]'
 ```
 
-> **Important:** `az monitor diagnostic-settings create` is an **upsert** — if the name matches an existing setting, it **replaces** it entirely. That's why you must include `--storage-account` and `--workspace` again, otherwise those destinations will be removed.
+> **Important:** `az monitor diagnostic-settings create` is an **upsert** -- if the name matches an existing setting, it **replaces** it entirely. That's why you must include `--storage-account` and `--workspace` again, otherwise those destinations will be removed.
 
 ### Option B: Create a Separate Diagnostic Setting for Event Hub Only
 
@@ -294,7 +294,7 @@ To close the loop, deploy the **Audit Monitor Function App** -- an Azure Functio
 | ------------------------------------------------ | --------------------------------------------------------------------- |
 | Messages sit in Event Hub for 7 days then expire | Each message is processed in near real-time                           |
 | You can only see message counts (metrics)        | You see the full audit trail: operation, caller IP, timestamp, result |
-| No alerting or downstream integration            | Structured logs in Application Insights — queryable, alertable       |
+| No alerting or downstream integration            | Structured logs in Application Insights -- queryable, alertable       |
 | Manual effort to peek at messages                | Automatic processing of every HSM operation                           |
 
 ### What it monitors
@@ -303,17 +303,17 @@ The function filters for these HSM operations (Cloud HSM example -- Key Vault an
 
 | Operation                         | Why it matters                                    | Log Level    |
 | --------------------------------- | ------------------------------------------------- | ------------ |
-| `CN_DELETE_USER`                | HSM user deleted — destructive identity event    | `CRITICAL` |
-| `CN_TOMBSTONE_OBJECT`           | Key deleted from HSM — destructive, irreversible | `CRITICAL` |
-| `CN_CREATE_USER`                | New HSM user created — identity management event | `WARNING`  |
+| `CN_DELETE_USER`                | HSM user deleted -- destructive identity event    | `CRITICAL` |
+| `CN_TOMBSTONE_OBJECT`           | Key deleted from HSM -- destructive, irreversible | `CRITICAL` |
+| `CN_CREATE_USER`                | New HSM user created -- identity management event | `WARNING`  |
 | `CN_GENERATE_KEY`               | Symmetric key generated                           | `WARNING`  |
 | `CN_GENERATE_KEY_PAIR`          | Asymmetric key pair generated                     | `WARNING`  |
-| `CN_INSERT_MASKED_OBJECT_USER`  | Key imported into HSM — key movement event       | `WARNING`  |
-| `CN_EXTRACT_MASKED_OBJECT_USER` | Key exported from HSM — key movement event       | `WARNING`  |
+| `CN_INSERT_MASKED_OBJECT_USER`  | Key imported into HSM -- key movement event       | `WARNING`  |
+| `CN_EXTRACT_MASKED_OBJECT_USER` | Key exported from HSM -- key movement event       | `WARNING`  |
 | `CN_LOGIN`                      | Session authentication                            | `INFO`     |
 | `CN_LOGOUT`                     | Session ended                                     | `INFO`     |
-| `CN_AUTHORIZE_SESSION`          | Session authorization — access control event     | `INFO`     |
-| `CN_FIND_OBJECTS_USING_COUNT`   | Key enumeration — recon or inventory operation   | `INFO`     |
+| `CN_AUTHORIZE_SESSION`          | Session authorization -- access control event     | `INFO`     |
+| `CN_FIND_OBJECTS_USING_COUNT`   | Key enumeration -- recon or inventory operation   | `INFO`     |
 
 Destructive operations (user/key deletion) are logged at `CRITICAL` level. Key generation and key movement at `WARNING`. Login/logout, session, and enumeration at `INFO`.
 

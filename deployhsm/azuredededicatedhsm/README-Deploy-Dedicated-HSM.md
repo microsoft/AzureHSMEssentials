@@ -2,7 +2,7 @@
 
 This folder contains an ARM template and deployment scripts to provision Azure Dedicated HSM (Thales Luna Network HSM A790) infrastructure for HSM Scenario Builder.
 
-> **Prerequisite:** An active Azure subscription with Azure Dedicated HSM access approved. Dedicated HSM requires subscription-level onboarding — contact your Microsoft account team or open a support request to enable the `Microsoft.HardwareSecurityModules/dedicatedHSMs` resource provider.
+> **Prerequisite:** An active Azure subscription with Azure Dedicated HSM access approved. Dedicated HSM requires subscription-level onboarding -- contact your Microsoft account team or open a support request to enable the `Microsoft.HardwareSecurityModules/dedicatedHSMs` resource provider.
 
 > **Important:** Azure Dedicated HSM uses **VNet injection** (delegated subnet) rather than private endpoints. The HSM is placed directly into a dedicated subnet in your virtual network.
 
@@ -16,7 +16,7 @@ This folder contains an ARM template and deployment scripts to provision Azure D
 | ------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Virtual Network           | DHSM-HSB-CLIENT-RG  | `dhsmclient-vnet` with `default` subnet (10.3.0.0/24), delegated `hsmSubnet` (10.3.1.0/24), and `GatewaySubnet` (10.3.255.0/26) |
 | ExpressRoute Gateway PIP  | DHSM-HSB-CLIENT-RG  | Static Standard SKU public IP for the ExpressRoute virtual network gateway                                                              |
-| ExpressRoute VNet Gateway | DHSM-HSB-CLIENT-RG  | Standard SKU ExpressRoute gateway — required so the Dedicated HSM service can create a VNIC endpoint for connectivity                  |
+| ExpressRoute VNet Gateway | DHSM-HSB-CLIENT-RG  | Standard SKU ExpressRoute gateway -- required so the Dedicated HSM service can create a VNIC endpoint for connectivity                  |
 | Dedicated HSM             | DHSM-HSB-HSM-RG     | Thales Luna Network HSM A790, injected into the delegated hsmSubnet                                                                     |
 | Admin VM*(optional)*    | DHSM-HSB-ADMINVM-RG | Red Hat Enterprise Linux 8 Gen2 VM for HSM administration (only deployed when `-AdminPasswordOrKey` is provided)                      |
 | Public IP                 | DHSM-HSB-ADMINVM-RG | Static Standard SKU public IP for admin VM access                                                                                       |
@@ -203,9 +203,9 @@ Azure Dedicated HSM is a **bare-metal, single-tenant** device. It does **NOT** s
 
 Logging is managed directly on the HSM appliance itself:
 
-1. **Audit logging** — The Luna HSM records all administrative and cryptographic operations in its internal audit log.
-2. **Syslog forwarding** — Configure the Luna client to forward audit events to an external syslog server (e.g., Splunk, rsyslog, Azure Monitor Agent on a VM).
-3. **SNMP traps** — Enable SNMP on the HSM for operational alerts.
+1. **Audit logging** -- The Luna HSM records all administrative and cryptographic operations in its internal audit log.
+2. **Syslog forwarding** -- Configure the Luna client to forward audit events to an external syslog server (e.g., Splunk, rsyslog, Azure Monitor Agent on a VM).
+3. **SNMP traps** -- Enable SNMP on the HSM for operational alerts.
 
 Refer to the [Thales Luna documentation](https://thalesdocs.com/gphsm/luna/7/docs/network/Content/Home_Luna.htm) for detailed logging configuration instructions.
 
@@ -213,14 +213,14 @@ Refer to the [Thales Luna documentation](https://thalesdocs.com/gphsm/luna/7/doc
 
 ## ExpressRoute Gateway
 
-Azure Dedicated HSM requires an **ExpressRoute virtual network gateway** in the VNet so that the service can create a VNIC endpoint for HSM connectivity. The ExpressRoute circuit itself is created and managed internally by the Dedicated HSM service — this is transparent to the user.
+Azure Dedicated HSM requires an **ExpressRoute virtual network gateway** in the VNet so that the service can create a VNIC endpoint for HSM connectivity. The ExpressRoute circuit itself is created and managed internally by the Dedicated HSM service -- this is transparent to the user.
 
 The template deploys:
 
 - A **GatewaySubnet** (`10.3.255.0/26`) within the client VNet
 - A **Standard SKU ExpressRoute virtual network gateway** with a static public IP
 
-No user action is required to create or link a circuit — the gateway simply needs to exist before the Dedicated HSM resource is provisioned.
+No user action is required to create or link a circuit -- the gateway simply needs to exist before the Dedicated HSM resource is provisioned.
 
 See the [Azure Dedicated HSM tutorial](https://learn.microsoft.com/en-us/azure/dedicated-hsm/tutorial-deploy-hsm-powershell) for the full end-to-end walkthrough.
 
@@ -282,7 +282,7 @@ Once deployment completes:
 | File                             | Description                                    |
 | -------------------------------- | ---------------------------------------------- |
 | `dedicatedhsm-deploy.json`     | ARM template (subscription-level deployment)   |
-| `dedicatedhsm-parameters.json` | Parameter values — edit this before deploying |
+| `dedicatedhsm-parameters.json` | Parameter values -- edit this before deploying |
 | `README.md`                    | This file                                      |
 
 The deployment scripts are in the parent `deployhsm/` directory:

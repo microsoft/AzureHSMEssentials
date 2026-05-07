@@ -241,11 +241,11 @@ After deployment, the Cloud HSM cluster is provisioned but **not yet operational
 - A **Partition Officer (PO)** certificate must be created and uploaded to the HSM before it can process key operations
 - Until the PO certificate is uploaded, the HSM partition is in an **uninitialized** state
 
-### Step 1 — Install the Azure Cloud HSM SDK
+### Step 1 -- Install the Azure Cloud HSM SDK
 
 Download the correct SDK package from GitHub for the OS running on your admin VM.
 The deployment **defaults to Ubuntu 24.04**, but you can override the VM image via the
-`vmImagePublisher` / `vmImageOffer` / `vmImageSku` parameters — so choose the matching
+`vmImagePublisher` / `vmImageOffer` / `vmImageSku` parameters -- so choose the matching
 package from the [releases page](https://github.com/microsoft/MicrosoftAzureCloudHSM/releases).
 
 | Admin VM OS | Package format | Install command |
@@ -274,7 +274,7 @@ sudo dpkg -i AzureCloudHSM-ClientSDK-OpenSSL3-2.0.2.4.deb
 > [github.com/microsoft/MicrosoftAzureCloudHSM/releases](https://github.com/microsoft/MicrosoftAzureCloudHSM/releases)
 > and download the package that matches your OS and OpenSSL version.
 
-### Step 2 — Configure the HSM hostname
+### Step 2 -- Configure the HSM hostname
 
 Update the SDK configuration file with your HSM's FQDN (shown in deployment output as HSM1):
 
@@ -285,7 +285,7 @@ Update the SDK configuration file with your HSM's FQDN (shown in deployment outp
 | | `C:\ProgramData\AzureCloudHSM\mgmt_util\azcloudhsm_resource.cfg` |
 
 ```bash
-# Linux — edit the resource configuration file
+# Linux -- edit the resource configuration file
 sudo nano /opt/azcloudhsm/bin/azcloudhsm_resource.cfg
 ```
 
@@ -296,7 +296,7 @@ Set the `hostname` to the FQDN of HSM1 from the deployment output (e.g., `<clust
 hostname = <YOUR_HSM1_FQDN>
 ```
 
-### Step 3 — Create a Partition Officer and activate the HSM
+### Step 3 -- Create a Partition Officer and activate the HSM
 
 Follow the [Azure Cloud HSM Onboarding Guide (PDF)](https://github.com/microsoft/MicrosoftAzureCloudHSM/blob/main/OnboardingGuides/Azure%20Cloud%20HSM%20Onboarding.pdf)
 to create a Partition Officer (PO) certificate, upload it to the HSM, and complete activation.
@@ -361,7 +361,7 @@ Once deployment and activation complete, your Azure Cloud HSM environment is rea
 | File | Description |
 |---|---|
 | `cloudhsm-deploy.json` | ARM template (subscription-level deployment) |
-| `cloudhsm-parameters.json` | Parameter values — edit this before deploying |
+| `cloudhsm-parameters.json` | Parameter values -- edit this before deploying |
 | `README.md` | This file |
 
 The deployment scripts are in the parent `deployhsm/` directory:

@@ -1,4 +1,4 @@
-# Azure Key Vault Uninstall — HSM Scenario Builder
+# Azure Key Vault Uninstall -- HSM Scenario Builder
 
 Removes all Azure resource groups created by the Azure Key Vault deployment.
 
@@ -43,10 +43,10 @@ Removes all Azure resource groups created by the Azure Key Vault deployment.
 
 Resource groups are deleted in this order to avoid dependency conflicts:
 
-1. **AKV-HSB-ADMINVM-RG** — Admin VM (NIC references subnet in client VNet)
-2. **AKV-HSB-CLIENT-RG** — Networking (VNet, private endpoint, DNS)
-3. **AKV-HSB-HSM-RG** — Key Vault
-4. **AKV-HSB-LOGS-RG** — Storage Account, Log Analytics Workspace (deleted last to preserve diagnostic data longest)
+1. **AKV-HSB-ADMINVM-RG** -- Admin VM (NIC references subnet in client VNet)
+2. **AKV-HSB-CLIENT-RG** -- Networking (VNet, private endpoint, DNS)
+3. **AKV-HSB-HSM-RG** -- Key Vault
+4. **AKV-HSB-LOGS-RG** -- Storage Account, Log Analytics Workspace (deleted last to preserve diagnostic data longest)
 
 ---
 
@@ -58,7 +58,7 @@ After deleting the resource group, the Key Vault enters a soft-deleted state. To
 # List soft-deleted vaults
 az keyvault list-deleted --output table
 
-# Purge a specific vault (permanent — cannot be undone)
+# Purge a specific vault (permanent -- cannot be undone)
 az keyvault purge --name <VAULT_NAME> --location "<LOCATION>"
 ```
 
@@ -70,7 +70,7 @@ az keyvault purge --name <VAULT_NAME> --location "<LOCATION>"
 
 ## VPN Gateway
 
-If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `AKV-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) — no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
+If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `AKV-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) -- no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
 
 To remove **only** the VPN Gateway while keeping the Key Vault deployment intact:
 

@@ -76,7 +76,7 @@ Both scripts will:
 1. Prompt for confirmation before deleting anything
 2. Delete the admin VM resource group first (its NIC references the client VNet subnet)
 3. Delete the server resource group (Dedicated HSM)
-4. Delete the client resource group (networking — VNet with delegated subnet + ExpressRoute Gateway)
+4. Delete the client resource group (networking -- VNet with delegated subnet + ExpressRoute Gateway)
 
 ---
 
@@ -145,7 +145,7 @@ If you used custom resource group names during deployment, the scripts read them
 
 ## VPN Gateway
 
-If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `DHSM-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) — no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
+If the deployment included `-EnableVpnGateway`, the VPN Gateway and its public IP live in `DHSM-HSB-CLIENT-RG`. Running `uninstall-hsm.ps1` deletes the entire client RG (including the VPN Gateway) -- no extra steps needed. The uninstall will take ~30 minutes longer due to VPN Gateway deletion.
 
 To remove **only** the VPN Gateway while keeping the HSM deployment intact:
 

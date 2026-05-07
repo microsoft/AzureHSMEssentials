@@ -1,4 +1,4 @@
-# Site-to-Site VPN to Azure Cloud HSM — Manual Configuration Guide
+# Site-to-Site VPN to Azure Cloud HSM -- Manual Configuration Guide
 
 This guide walks through setting up a **Site-to-Site (S2S) IPsec/IKEv2 VPN** between an on-premises network (or simulated environment) and an Azure VNet hosting Azure Cloud HSM behind Private Link.
 
@@ -40,7 +40,7 @@ For supported devices, see: [Azure VPN Gateway validated devices](https://learn.
 
 ## Option A: On-Premises Device to Azure VPN Gateway
 
-### Step 1 — Create a Local Network Gateway
+### Step 1 -- Create a Local Network Gateway
 
 The Local Network Gateway represents your on-premises VPN device in Azure.
 
@@ -59,13 +59,13 @@ New-AzLocalNetworkGateway `
     -AddressPrefix $onPremAddrSpace
 ```
 
-### Step 2 — Create the S2S VPN Connection
+### Step 2 -- Create the S2S VPN Connection
 
 ```powershell
 $vpnGateway    = Get-AzVirtualNetworkGateway -Name "chsm-vpn-gateway" -ResourceGroupName $resourceGroup
 $localGateway  = Get-AzLocalNetworkGateway -Name "onprem-local-gateway" -ResourceGroupName $resourceGroup
 
-# Use a strong shared key (PSK) — both sides must match
+# Use a strong shared key (PSK) -- both sides must match
 $sharedKey = "YourStrongPreSharedKey123!"
 
 New-AzVirtualNetworkGatewayConnection `
@@ -79,7 +79,7 @@ New-AzVirtualNetworkGatewayConnection `
     -ConnectionProtocol IKEv2
 ```
 
-### Step 3 — Configure the On-Premises VPN Device
+### Step 3 -- Configure the On-Premises VPN Device
 
 Configure your device with these settings:
 
@@ -98,7 +98,7 @@ Configure your device with these settings:
 > For device-specific configuration scripts, download from the Azure Portal:
 > **VPN Gateway → Connections → s2s-to-onprem → Download configuration**
 
-### Step 4 — Verify the Connection
+### Step 4 -- Verify the Connection
 
 ```powershell
 Get-AzVirtualNetworkGatewayConnection `
@@ -124,7 +124,7 @@ Test-NetConnection -ComputerName <private-ip> -Port 2225
 
 Use this to validate S2S VPN without on-premises hardware. Deploys a second VNet + VPN Gateway in Azure that acts as a simulated on-prem site. Azure uses identical IPsec/IKEv2 tunnels for VNet-to-VNet connections.
 
-### Step 1 — Create the Simulated On-Prem Environment
+### Step 1 -- Create the Simulated On-Prem Environment
 
 ```powershell
 $resourceGroup  = "CHSM-HAG-SIMSITE-RG"
@@ -169,7 +169,7 @@ New-AzVirtualNetworkGateway `
     -EnableBgp $false
 ```
 
-### Step 2 — Create Connections in Both Directions
+### Step 2 -- Create Connections in Both Directions
 
 VNet-to-VNet requires a connection resource on each side:
 
@@ -203,7 +203,7 @@ New-AzVirtualNetworkGatewayConnection `
     -ConnectionProtocol IKEv2
 ```
 
-### Step 3 — Verify the Connection
+### Step 3 -- Verify the Connection
 
 ```powershell
 # Check from HSM side
@@ -215,7 +215,7 @@ Get-AzVirtualNetworkGatewayConnection -Name "onprem-sim-to-hsm" -ResourceGroupNa
 # Both should show: ConnectionStatus = Connected
 ```
 
-### Step 4 — Test Connectivity (Optional VM in Simulated VNet)
+### Step 4 -- Test Connectivity (Optional VM in Simulated VNet)
 
 Deploy a small VM in the simulated on-prem VNet to test end-to-end HSM access over the S2S tunnel:
 

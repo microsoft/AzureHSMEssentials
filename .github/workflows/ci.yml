@@ -1,5 +1,5 @@
 # ==============================================================
-# HSM Scenario Builder — CI Pipeline
+# HSM Scenario Builder -- CI Pipeline
 # Runs on every PR and push to main: lint, type-check, and test.
 # ==============================================================
 

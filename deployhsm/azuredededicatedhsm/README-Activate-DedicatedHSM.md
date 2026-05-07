@@ -1,6 +1,6 @@
 # Activate Azure Dedicated HSM (Thales Luna HSM A790)
 
-This guide covers the **minimum steps** to activate an Azure Dedicated HSM, register a client VM, and verify connectivity. No STC (Secure Trusted Channel) setup is required — NTLS provides the encrypted channel.
+This guide covers the **minimum steps** to activate an Azure Dedicated HSM, register a client VM, and verify connectivity. No STC (Secure Trusted Channel) setup is required -- NTLS provides the encrypted channel.
 
 > **Prerequisites:**
 >

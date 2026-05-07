@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "Deploys Azure Dedicated HSM (Thales SafeNet Luna Network HSM A790) with networking, VNet injection via delegated subnet, ExpressRoute gateway, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking (VNet with compute, HSM, and GatewaySubnet), the Dedicated HSM, and (optionally) an admin virtual machine. Azure Dedicated HSM is a bare-metal, single-tenant device — it does NOT support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the Luna client tools (syslog forwarding, audit logging)."
+    "description": "Deploys Azure Dedicated HSM (Thales SafeNet Luna Network HSM A790) with networking, VNet injection via delegated subnet, ExpressRoute gateway, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking (VNet with compute, HSM, and GatewaySubnet), the Dedicated HSM, and (optionally) an admin virtual machine. Azure Dedicated HSM is a bare-metal, single-tenant device -- it does NOT support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the Luna client tools (syslog forwarding, audit logging)."
   },
   "parameters": {
     "location": {

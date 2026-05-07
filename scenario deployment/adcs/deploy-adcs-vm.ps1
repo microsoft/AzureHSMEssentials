@@ -1,10 +1,10 @@
-﻿<#
+<#
 .SYNOPSIS
     Step 1 of 2: Deploys a Windows Server 2022 VM for the ADCS scenario on
     Azure Cloud HSM or Azure Dedicated HSM.
 
 .DESCRIPTION
-    ADCS Scenario — Step 1 of 2: Deploy ADCS VM
+    ADCS Scenario -- Step 1 of 2: Deploy ADCS VM
 
     Creates a Windows Server 2022 Datacenter Gen2 VM in its own resource group,
     connected to the existing HSM platform VNet and subnet so it can communicate
@@ -14,8 +14,8 @@
     and then run Step 2 (configure-adcs.ps1) to configure the Root CA.
 
     Workflow:
-      Step 1 — deploy-adcs-vm.ps1    (this script) Deploy the ADCS VM
-      Step 2 — configure-adcs.ps1     Configure Root CA with Cavium KSP
+      Step 1 -- deploy-adcs-vm.ps1    (this script) Deploy the ADCS VM
+      Step 2 -- configure-adcs.ps1     Configure Root CA with Cavium KSP
 
     Supported platforms:
       - AzureCloudHSM     : Deploys into the Cloud HSM VNet  (CHSM-HSB-ADCS-VM)
@@ -96,7 +96,7 @@ $displayName = $platformInfo.DisplayName
 # ------------------------------------------------------------------
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan
-Write-Host "  ADCS Scenario — Step 1 of 2: Deploy ADCS VM"         -ForegroundColor Cyan
+Write-Host "  ADCS Scenario -- Step 1 of 2: Deploy ADCS VM"         -ForegroundColor Cyan
 Write-Host "  Platform : $displayName"                             -ForegroundColor Cyan
 Write-Host "  VM Image : Windows Server 2022 Datacenter Gen2"     -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
@@ -130,7 +130,7 @@ Write-Host "[INFO] Parameters file: $ParameterFile" -ForegroundColor Gray
 $paramContent = Get-Content -Path $ParameterFile -Raw | ConvertFrom-Json
 $paramValues = $paramContent.parameters
 
-# Resolve location — track whether user explicitly provided it
+# Resolve location -- track whether user explicitly provided it
 $locationOverride = $PSBoundParameters.ContainsKey('Location')
 if (-not $Location) {
     $Location = $paramValues.location.value
@@ -296,7 +296,7 @@ try {
     Write-Host "  The ADCS VM is on the same VNet/subnet as the $displayName Admin VM." -ForegroundColor Gray
     Write-Host ""
     Write-Host "  ────────────────────────────────────────────────────" -ForegroundColor Yellow
-    Write-Host "  NEXT — Step 2 of 2: Configure Root CA" -ForegroundColor Yellow
+    Write-Host "  NEXT -- Step 2 of 2: Configure Root CA" -ForegroundColor Yellow
     Write-Host "  ────────────────────────────────────────────────────" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "  Before running Step 2:" -ForegroundColor White

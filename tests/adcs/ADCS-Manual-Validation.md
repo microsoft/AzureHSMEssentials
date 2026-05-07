@@ -1,4 +1,4 @@
-# ADCS Manual Validation — Both HSM Platforms
+# ADCS Manual Validation -- Both HSM Platforms
 
 Use these steps to manually validate that your HSM-backed Root CA is issuing certificates correctly. The automated version of this is [`ADCS-Sanity-Check.ps1`](ADCS-Sanity-Check.ps1).
 
@@ -18,7 +18,7 @@ Use these steps to manually validate that your HSM-backed Root CA is issuing cer
 
 ---
 
-## Step 1 — Create a Request INF
+## Step 1 -- Create a Request INF
 
 Create a file `C:\temp\test-request.inf` with the content below.
 
@@ -54,11 +54,11 @@ RequestType = PKCS10
 HashAlgorithm = SHA256
 ```
 
-> **Note:** SafeNet KSP is a CNG provider; `ProviderType = 0` is standard for CNG. If `certreq -new` fails with `ProviderType = 0`, try omitting the `ProviderType` line entirely — CNG providers may not require it.
+> **Note:** SafeNet KSP is a CNG provider; `ProviderType = 0` is standard for CNG. If `certreq -new` fails with `ProviderType = 0`, try omitting the `ProviderType` line entirely -- CNG providers may not require it.
 
 ---
 
-## Step 2 — Generate the CSR
+## Step 2 -- Generate the CSR
 
 ```powershell
 certreq -new C:\temp\test-request.inf C:\temp\test-request.req
@@ -68,7 +68,7 @@ Expected: `CertReq: Request Created`
 
 ---
 
-## Step 3 — Verify the CSR
+## Step 3 -- Verify the CSR
 
 ```powershell
 certutil -dump C:\temp\test-request.req
@@ -80,7 +80,7 @@ Confirm:
 
 ---
 
-## Step 4 — Submit the CSR to the CA
+## Step 4 -- Submit the CSR to the CA
 
 ### Option A: certreq (recommended for automation)
 
@@ -109,7 +109,7 @@ If the CA is a **standalone root** (the default in this project), the request ma
 
 ---
 
-## Step 5 — Approve a Pending Request (if needed)
+## Step 5 -- Approve a Pending Request (if needed)
 
 If Step 4 showed `Certificate request is pending: Taken Under Submission` with a **RequestId**:
 
@@ -125,7 +125,7 @@ certreq -retrieve -config "SERVERNAME\CANAME" <RequestId> C:\temp\test-cert.cer
 
 ---
 
-## Step 6 — Verify the Issued Certificate
+## Step 6 -- Verify the Issued Certificate
 
 ```powershell
 certutil -dump C:\temp\test-cert.cer
@@ -140,9 +140,9 @@ Confirm:
 
 ---
 
-## Step 7 — Verify HSM Key Handles (Platform-Specific)
+## Step 7 -- Verify HSM Key Handles (Platform-Specific)
 
-### Cloud HSM — Cavium SDK
+### Cloud HSM -- Cavium SDK
 
 ```powershell
 # List all keys on the HSM
@@ -151,7 +151,7 @@ Confirm:
 
 You should see the key handle for your CA key plus the new test key. Note: the test key from `certreq -new` also lives on the HSM.
 
-### Dedicated HSM — SafeNet LunaCM
+### Dedicated HSM -- SafeNet LunaCM
 
 From the Windows ADCS VM (not the Admin VM):
 
@@ -167,13 +167,13 @@ lunacm:> role login -name co
 lunacm:> partition contents
 ```
 
-> You must log in as Crypto Officer (CO) to see key objects. The partition only shows public-session objects otherwise. CO is the operating role for ADCS — CU is not required.
+> You must log in as Crypto Officer (CO) to see key objects. The partition only shows public-session objects otherwise. CO is the operating role for ADCS -- CU is not required.
 
 You should see the CA's RSA key object plus the test key.
 
 ---
 
-## Step 8 — Cleanup
+## Step 8 -- Cleanup
 
 Remove the test certificate from the user's personal store (certreq adds it there):
 

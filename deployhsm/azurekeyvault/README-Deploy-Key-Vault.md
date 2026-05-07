@@ -1,6 +1,6 @@
-# Azure Key Vault Deployment — HSM Scenario Builder
+# Azure Key Vault Deployment -- HSM Scenario Builder
 
-Deploys an **Azure Key Vault** (Premium SKU by default — HSM-backed keys) with:
+Deploys an **Azure Key Vault** (Premium SKU by default -- HSM-backed keys) with:
 
 - **Entra ID RBAC-only** authentication (no legacy access policies)
 - **Private endpoint** with private DNS zone (enabled by default, opt-out with `enablePrivateEndpoint: false`)
@@ -41,7 +41,7 @@ Deploys an **Azure Key Vault** (Premium SKU by default — HSM-backed keys) with
     -SubscriptionId "<YOUR_SUBSCRIPTION_ID>"
 ```
 
-### PowerShell (with admin VM — password auth)
+### PowerShell (with admin VM -- password auth)
 
 ```powershell
 .\deploy-hsm.ps1 -Platform AzureKeyVault `
@@ -51,7 +51,7 @@ Deploys an **Azure Key Vault** (Premium SKU by default — HSM-backed keys) with
     -AuthenticationType password
 ```
 
-### PowerShell (with admin VM — SSH key)
+### PowerShell (with admin VM -- SSH key)
 
 ```powershell
 .\deploy-hsm.ps1 -Platform AzureKeyVault `
@@ -68,7 +68,7 @@ Deploys an **Azure Key Vault** (Premium SKU by default — HSM-backed keys) with
     --subscription-id "<YOUR_SUBSCRIPTION_ID>"
 ```
 
-### Bash (with admin VM — password auth)
+### Bash (with admin VM -- password auth)
 
 ```bash
 ./deploy-hsm.sh --platform azurekeyvault \
@@ -88,7 +88,7 @@ Deploys an **Azure Key Vault** (Premium SKU by default — HSM-backed keys) with
 | `-SubscriptionId`           | `--subscription-id`, `-s`      | Yes      | Azure subscription ID |
 | `-Location`                 | `--location`, `-l`             | No       | Azure region override (default from parameters file) |
 | `-ParameterFile`            | `--parameter-file`, `-p`       | No       | Custom parameters file path |
-| `-AdminPasswordOrKey`       | `--admin-password-or-key`      | No       | SSH key or password — triggers admin VM deployment |
+| `-AdminPasswordOrKey`       | `--admin-password-or-key`      | No       | SSH key or password -- triggers admin VM deployment |
 | `-AdminUsername`             | `--admin-username`             | No       | VM admin username (default: `azureuser`) |
 | `-AuthenticationType`       | `--auth-type`                  | No       | `sshPublicKey` or `password` (default: `sshPublicKey`) |
 
@@ -158,19 +158,19 @@ Edit `keyvault-parameters.json` or pass a custom file via `-ParameterFile` / `--
 Azure Key Vault uses Entra ID RBAC. Assign roles to users/apps:
 
 ```bash
-# Key Vault Crypto Officer — full key management
+# Key Vault Crypto Officer -- full key management
 az role assignment create \
     --role "Key Vault Crypto Officer" \
     --assignee "<USER_OR_APP_OBJECT_ID>" \
     --scope "/subscriptions/<SUB_ID>/resourceGroups/AKV-HSB-HSM-RG/providers/Microsoft.KeyVault/vaults/<VAULT_NAME>"
 
-# Key Vault Secrets Officer — full secret management
+# Key Vault Secrets Officer -- full secret management
 az role assignment create \
     --role "Key Vault Secrets Officer" \
     --assignee "<USER_OR_APP_OBJECT_ID>" \
     --scope "/subscriptions/<SUB_ID>/resourceGroups/AKV-HSB-HSM-RG/providers/Microsoft.KeyVault/vaults/<VAULT_NAME>"
 
-# Key Vault Certificates Officer — full certificate management
+# Key Vault Certificates Officer -- full certificate management
 az role assignment create \
     --role "Key Vault Certificates Officer" \
     --assignee "<USER_OR_APP_OBJECT_ID>" \
