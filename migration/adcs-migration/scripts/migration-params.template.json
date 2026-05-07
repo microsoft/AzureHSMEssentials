@@ -1,0 +1,64 @@
+{
+    "_comment": "ADCS CA Migration Parameters -- Complete this file for your environment",
+    "_version": "1.0",
+
+    "scenario": "",
+    "_scenario_help": "RootCA | IssuingCA -- Which tier of CA are you migrating?",
+
+    "option": "",
+    "_option_help": "PreDistributed | CrossSigned -- Pre-Distributed: new root distributed before cutover. Cross-Signed: old root cross-signs new root for seamless chain bridging.",
+
+    "oldServer": {
+        "_help": "The EXISTING CA server (source). This is the server running the CA you are migrating FROM.",
+        "resourceGroup": "",
+        "vmName": "",
+        "caCommonName": "",
+        "_caCommonName_help": "Optional. Auto-detected from registry. Provide only if the server hosts multiple CAs."
+    },
+
+    "newServer": {
+        "_help": "The TARGET CA server. This is the clean server with HSM KSP installed where the new CA will be built.",
+        "resourceGroup": "",
+        "vmName": "",
+        "vmAdminUsername": "",
+        "_vmAdminUsername_help": "Local admin username on the NEW VM. Required for Cloud HSM -- certutil -installcert hangs under SYSTEM with Cavium KSP. The orchestrator runs this step as the specified user via scheduled task."
+    },
+
+    "parentCA": {
+        "_help": "The ROOT CA that signs the new Issuing CA cert. Required for IssuingCA scenario only. Ignored for RootCA scenario.",
+        "resourceGroup": "",
+        "vmName": "",
+        "caConfig": "",
+        "_caConfig_help": "Format: 'hostname\\CAName' (e.g., 'dhsm-adcs-vm\\HSB-RootCA'). Used with certreq -submit -config."
+    },
+
+    "newCA": {
+        "_help": "Configuration for the new CA being created on the target server.",
+        "caCommonName": "",
+        "_caCommonName_help": "REQUIRED. Must include a generational suffix (e.g., 'Contoso-RootCA-G2'). Prevents same-CN chain collision when both CAs coexist in trust stores.",
+        "keyAlgorithm": "RSA",
+        "_keyAlgorithm_help": "RSA | ECDSA_P256 | ECDSA_P384 | ECDSA_P521 -- Determines CryptoProviderName format: RSA uses 'RSA#<KSP>', ECDSA uses 'ECDSA_P256#<KSP>' etc.",
+        "keyLength": "2048",
+        "_keyLength_help": "RSA: 2048 | 3072 | 4096. ECDSA: ignored (auto-derived from keyAlgorithm: P256=256, P384=384, P521=521).",
+        "hashAlgorithm": "SHA256",
+        "_hashAlgorithm_help": "SHA256 | SHA384 | SHA512. SHA256 is recommended for both RSA and ECDSA.",
+        "validityYears": 20,
+        "overwriteExisting": false,
+        "_overwriteExisting_help": "Set to true only if Step 2 reported an existing CA configuration."
+    },
+
+    "trust": {
+        "_help": "Trust distribution settings (Step 5/6).",
+        "publishToAD": false,
+        "_publishToAD_help": "Publish new CA cert to Active Directory via certutil -dspublish. Requires Enterprise Admin.",
+        "skipADPublish": true,
+        "_skipADPublish_help": "Skip AD publishing (standalone CAs, lab environments, or manual distribution)."
+    },
+
+    "advanced": {
+        "_help": "Optional advanced settings. Defaults work for most environments.",
+        "skipNetworkCheck": false,
+        "testSubject": "CN=Migration-Validation-Test",
+        "maxCertsToShow": 25
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "_comment": "HSM Scenario Builder Test Environment -- Scenario B Option 2 (IssuingCA + CrossSigned)",
+    "_version": "1.0",
+
+    "scenario": "IssuingCA",
+    "option": "CrossSigned",
+
+    "oldServer": {
+        "resourceGroup": "DHSM-HSB-ADCS-VM",
+        "vmName": "dhsm-adcs-vm",
+        "caCommonName": "HSB-RootCA"
+    },
+
+    "newServer": {
+        "resourceGroup": "CHSM-HSB-ADCS-VM",
+        "vmName": "chsm-adcs-ica",
+        "vmAdminUsername": "chsmVMAdmin"
+    },
+
+    "parentCA": {
+        "resourceGroup": "DHSM-HSB-ADCS-VM",
+        "vmName": "dhsm-adcs-vm",
+        "caConfig": "dhsm-adcs-vm\\HSB-RootCA"
+    },
+
+    "newCA": {
+        "_options": "keyAlgorithm: RSA | ECDSA_P256 | ECDSA_P384 | ECDSA_P521. keyLength: RSA=2048|3072|4096, ECDSA=auto from curve. hashAlgorithm: SHA256|SHA384|SHA512.",
+        "caCommonName": "CHSM-IssuingCA",
+        "keyAlgorithm": "RSA",
+        "keyLength": "2048",
+        "hashAlgorithm": "SHA256",
+        "validityYears": 5,
+        "overwriteExisting": false
+    },
+
+    "trust": {
+        "publishToAD": false,
+        "skipADPublish": true
+    },
+
+    "advanced": {
+        "skipNetworkCheck": false,
+        "testSubject": "CN=Migration-Validation-Test",
+        "maxCertsToShow": 25
+    }
+}
