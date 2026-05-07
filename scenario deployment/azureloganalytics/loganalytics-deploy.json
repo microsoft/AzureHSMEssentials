@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys a Storage Account and Log Analytics workspace for Azure Cloud HSM diagnostic logging, then creates a diagnostic setting on the HSM cluster to route HsmServiceOperations logs to both destinations. Designed to add logging to an existing Cloud HSM deployment that was provisioned without it. Deployed by the HSM Scenario Builder Log Analytics scenario."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for the logging resources. Must match or be compatible with the Cloud HSM cluster region."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage account name for diagnostic logs (3-24 chars, lowercase alphanumeric). Leave empty to auto-generate."
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics workspace name for diagnostic logs. Leave empty to auto-generate."
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 365,
+      "minValue": 1,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Number of days to retain diagnostic logs in the Log Analytics workspace (1-730). Default: 365."
+      }
+    }
+  },
+  "variables": {
+    "storageAccountNameResolved": "[if(empty(parameters('storageAccountName')), format('chsmlogs{0}', substring(uniqueString(subscription().subscriptionId, resourceGroup().name), 0, 8)), parameters('storageAccountName'))]",
+    "logAnalyticsWorkspaceNameResolved": "[if(empty(parameters('logAnalyticsWorkspaceName')), format('chsm-logs-{0}', substring(uniqueString(subscription().subscriptionId, resourceGroup().name), 0, 8)), parameters('logAnalyticsWorkspaceName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('storageAccountNameResolved')]",
+      "location": "[parameters('location')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false
+      },
+      "tags": {
+        "purpose": "Cloud HSM diagnostic logs",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('logAnalyticsWorkspaceNameResolved')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": "[parameters('logRetentionDays')]"
+      },
+      "tags": {
+        "purpose": "Cloud HSM diagnostic logs",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    }
+  ],
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountNameResolved')]"
+    },
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountNameResolved'))]"
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "value": "[variables('logAnalyticsWorkspaceNameResolved')]"
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceNameResolved'))]"
+    }
+  }
+}

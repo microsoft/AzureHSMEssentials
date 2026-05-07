@@ -1,0 +1,171 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys an Event Hub namespace, Event Hub, authorization rules, and consumer group into an existing resource group. Designed for streaming Azure Cloud HSM diagnostic logs via Azure Monitor. Deployed by the HSM Scenario Builder EventHub scenario."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for the Event Hub resources."
+      }
+    },
+    "eventHubNamespaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the Event Hub namespace (6-50 chars, alphanumeric and hyphens)."
+      }
+    },
+    "eventHubName": {
+      "type": "string",
+      "defaultValue": "cloudhsm-logs",
+      "metadata": {
+        "description": "Name for the Event Hub (topic) that receives Cloud HSM diagnostic logs."
+      }
+    },
+    "namespaceSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard",
+        "Premium"
+      ],
+      "metadata": {
+        "description": "SKU tier for the Event Hub namespace. Standard is required for Diagnostic Settings integration. Basic tier is NOT supported."
+      }
+    },
+    "namespaceCapacity": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "maxValue": 40,
+      "metadata": {
+        "description": "Throughput units for the namespace (1 TU = 1 MB/s ingress, 2 MB/s egress). 1 is sufficient for HSM audit logs."
+      }
+    },
+    "partitionCount": {
+      "type": "int",
+      "defaultValue": 2,
+      "minValue": 1,
+      "maxValue": 32,
+      "metadata": {
+        "description": "Number of partitions in the Event Hub. 2 is sufficient for HSM audit log throughput."
+      }
+    },
+    "messageRetentionInDays": {
+      "type": "int",
+      "defaultValue": 7,
+      "minValue": 1,
+      "maxValue": 7,
+      "metadata": {
+        "description": "Message retention period in days (max 7 for Standard tier)."
+      }
+    },
+    "consumerGroupName": {
+      "type": "string",
+      "defaultValue": "hsm-scenario-builder",
+      "metadata": {
+        "description": "Consumer group name for downstream log processing."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.EventHub/namespaces",
+      "apiVersion": "2024-01-01",
+      "name": "[parameters('eventHubNamespaceName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('namespaceSku')]",
+        "tier": "[parameters('namespaceSku')]",
+        "capacity": "[parameters('namespaceCapacity')]"
+      },
+      "properties": {
+        "isAutoInflateEnabled": false,
+        "maximumThroughputUnits": 0,
+        "disableLocalAuth": false,
+        "minimumTlsVersion": "1.2"
+      },
+      "tags": {
+        "purpose": "Cloud HSM diagnostic log streaming",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.EventHub/namespaces/eventhubs",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}', parameters('eventHubNamespaceName'), parameters('eventHubName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "partitionCount": "[parameters('partitionCount')]",
+        "messageRetentionInDays": "[parameters('messageRetentionInDays')]"
+      }
+    },
+    {
+      "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/{1}/{2}', parameters('eventHubNamespaceName'), parameters('eventHubName'), parameters('consumerGroupName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('eventHubNamespaceName'), parameters('eventHubName'))]"
+      ],
+      "properties": {
+        "userMetadata": "HSM Scenario Builder consumer group for Cloud HSM audit log processing"
+      }
+    },
+    {
+      "type": "Microsoft.EventHub/namespaces/authorizationRules",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/DiagnosticSettingsSendRule', parameters('eventHubNamespaceName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Send"
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.EventHub/namespaces/authorizationRules",
+      "apiVersion": "2024-01-01",
+      "name": "[format('{0}/ConsumerListenRule', parameters('eventHubNamespaceName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "rights": [
+          "Listen"
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "eventHubNamespaceName": {
+      "type": "string",
+      "value": "[parameters('eventHubNamespaceName')]"
+    },
+    "eventHubName": {
+      "type": "string",
+      "value": "[parameters('eventHubName')]"
+    },
+    "consumerGroupName": {
+      "type": "string",
+      "value": "[parameters('consumerGroupName')]"
+    },
+    "sendAuthRuleId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceName'), 'DiagnosticSettingsSendRule')]"
+    },
+    "listenConnectionString": {
+      "type": "string",
+      "value": "[listKeys(resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('eventHubNamespaceName'), 'ConsumerListenRule'), '2024-01-01').primaryConnectionString]"
+    },
+    "eventHubNamespaceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.EventHub/namespaces', parameters('eventHubNamespaceName'))]"
+    }
+  }
+}

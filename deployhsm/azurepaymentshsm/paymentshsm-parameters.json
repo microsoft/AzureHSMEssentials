@@ -1,0 +1,78 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "East US"
+    },
+    "clientResourceGroupName": {
+      "value": "PHSM-HSB-CLIENT-RG"
+    },
+    "serverResourceGroupName": {
+      "value": "PHSM-HSB-HSM-RG"
+    },
+    "vnetName": {
+      "value": "phsmclient-vnet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.4.0.0/16"
+    },
+    "subnetName": {
+      "value": "default"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.4.0.0/24"
+    },
+    "hsmSubnetName": {
+      "value": "hsmSubnet"
+    },
+    "hsmSubnetAddressPrefix": {
+      "value": "10.4.1.0/24"
+    },
+    "managementSubnetName": {
+      "value": "hsmMgmtSubnet"
+    },
+    "managementSubnetAddressPrefix": {
+      "value": "10.4.2.0/24"
+    },
+    "paymentHsmName": {
+      "value": ""
+    },
+    "hsmSkuName": {
+      "value": "payShield10K_LMK1_CPS60"
+    },
+    "stampId": {
+      "value": "stamp1"
+    },
+    "adminVmResourceGroupName": {
+      "value": "PHSM-HSB-ADMINVM-RG"
+    },
+    "vmName": {
+      "value": "phsm-admin-vm"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "vmImagePublisher": {
+      "value": "Canonical"
+    },
+    "vmImageOffer": {
+      "value": "ubuntu-24_04-lts"
+    },
+    "vmImageSku": {
+      "value": "server"
+    },
+    "vmImageVersion": {
+      "value": "latest"
+    },
+    "adminUsername": {
+      "value": "phsmVMAdmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "adminPasswordOrKey": {
+      "value": ""
+    }
+  }
+}

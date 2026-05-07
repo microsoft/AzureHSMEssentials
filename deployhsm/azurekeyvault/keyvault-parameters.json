@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "UK West"
+    },
+    "clientResourceGroupName": {
+      "value": "AKV-HSB-CLIENT-RG"
+    },
+    "serverResourceGroupName": {
+      "value": "AKV-HSB-HSM-RG"
+    },
+    "vnetName": {
+      "value": "akvclient-vnet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.2.0.0/16"
+    },
+    "subnetName": {
+      "value": "default"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.2.0.0/24"
+    },
+    "privateDnsZoneName": {
+      "value": "privatelink.vaultcore.azure.net"
+    },
+    "keyVaultName": {
+      "value": ""
+    },
+    "skuName": {
+      "value": "premium"
+    },
+    "softDeleteRetentionInDays": {
+      "value": 90
+    },
+    "enablePurgeProtection": {
+      "value": true
+    },
+    "enablePrivateEndpoint": {
+      "value": true
+    },
+    "privateEndpointName": {
+      "value": "akv-client-private-endpoint"
+    },
+    "networkAclDefaultAction": {
+      "value": "Deny"
+    },
+    "firewallIpRules": {
+      "value": []
+    },
+    "adminVmResourceGroupName": {
+      "value": "AKV-HSB-ADMINVM-RG"
+    },
+    "vmName": {
+      "value": "akv-admin-vm"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "vmImagePublisher": {
+      "value": "Canonical"
+    },
+    "vmImageOffer": {
+      "value": "ubuntu-24_04-lts"
+    },
+    "vmImageSku": {
+      "value": "server"
+    },
+    "adminUsername": {
+      "value": "akvVMAdmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "logsResourceGroupName": {
+      "value": "AKV-HSB-LOGS-RG"
+    },
+    "storageAccountName": {
+      "value": ""
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": ""
+    },
+    "logRetentionDays": {
+      "value": 365
+    }
+  }
+}

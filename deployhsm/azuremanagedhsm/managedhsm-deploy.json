@@ -1,0 +1,895 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys Azure Managed HSM with networking, private endpoint (enabled by default), firewall rules, and optional admin VM for HSM Scenario Builder. Uses Entra ID RBAC-only authentication (no legacy access policies). Creates resource groups for client networking, the Managed HSM, and (optionally) an admin virtual machine connected to the same VNet."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for networking resources and the private endpoint."
+      }
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for the Managed HSM."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual network."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address space for the virtual network."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet within the virtual network."
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address prefix for the subnet."
+      }
+    },
+    "privateDnsZoneName": {
+      "type": "string",
+      "metadata": {
+        "description": "Private DNS zone name for Managed HSM private link."
+      }
+    },
+    "managedHsmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Globally unique name for the Managed HSM (3-24 chars, alphanumeric and hyphens). Leave empty to auto-generate."
+      }
+    },
+    "hsmSkuName": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_B1"
+      ],
+      "metadata": {
+        "description": "SKU name for the Managed HSM."
+      }
+    },
+    "tenantId": {
+      "type": "string",
+      "defaultValue": "[subscription().tenantId]",
+      "metadata": {
+        "description": "Azure AD (Entra ID) tenant ID. Defaults to the subscription tenant."
+      }
+    },
+    "initialAdminObjectIds": {
+      "type": "array",
+      "metadata": {
+        "description": "Array of Azure AD (Entra ID) object IDs that will be granted initial Managed HSM Administrator role. At least one is required."
+      }
+    },
+    "softDeleteRetentionInDays": {
+      "type": "int",
+      "defaultValue": 90,
+      "minValue": 7,
+      "maxValue": 90,
+      "metadata": {
+        "description": "Number of days to retain soft-deleted HSM (7-90). Default: 90."
+      }
+    },
+    "enablePurgeProtection": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable purge protection (recommended). Once enabled, cannot be disabled."
+      }
+    },
+    "enablePrivateEndpoint": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Deploy a private endpoint for the Managed HSM (default: true). Set to false to use public network access only."
+      }
+    },
+    "privateEndpointName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the private endpoint connecting the client VNet to the Managed HSM."
+      }
+    },
+    "networkAclDefaultAction": {
+      "type": "string",
+      "defaultValue": "Deny",
+      "allowedValues": [
+        "Allow",
+        "Deny"
+      ],
+      "metadata": {
+        "description": "Default action for the Managed HSM firewall when no rule matches. 'Deny' recommended with private endpoint."
+      }
+    },
+    "firewallIpRules": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Array of IP rules for the Managed HSM firewall. Each item should be an object with a 'value' property containing a CIDR range, e.g. [{\"value\":\"203.0.113.0/24\"}]."
+      }
+    },
+    "adminVmResourceGroupName": {
+      "type": "string",
+      "defaultValue": "MHSM-HSB-ADMINVM-RG",
+      "metadata": {
+        "description": "Resource group for the admin virtual machine."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "mhsm-admin-vm",
+      "metadata": {
+        "description": "Name of the admin virtual machine."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "Size of the admin virtual machine (2 vCPUs, 8 GiB memory)."
+      }
+    },
+    "vmImagePublisher": {
+      "type": "string",
+      "defaultValue": "Canonical",
+      "metadata": {
+        "description": "VM image publisher. Use 'Canonical' for Ubuntu, 'MicrosoftWindowsServer' for Windows."
+      }
+    },
+    "vmImageOffer": {
+      "type": "string",
+      "defaultValue": "ubuntu-24_04-lts",
+      "metadata": {
+        "description": "VM image offer. Use 'ubuntu-24_04-lts' for Ubuntu 24.04, 'WindowsServer' for Windows."
+      }
+    },
+    "vmImageSku": {
+      "type": "string",
+      "defaultValue": "server",
+      "metadata": {
+        "description": "VM image SKU. Use 'server' for Ubuntu 24.04 LTS Gen2, '2022-datacenter-g2' for Windows Server 2022 Gen2."
+      }
+    },
+    "vmImageVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "VM image version."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "mhsmVMAdmin",
+      "metadata": {
+        "description": "Admin username for the virtual machine."
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "sshPublicKey",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Authentication type: SSH public key (Linux) or password (Linux/Windows)."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SSH public key or password for the admin VM. If empty, the admin VM will not be deployed."
+      }
+    },
+    "vmCustomData": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Base64-encoded cloud-init payload for the admin VM. Used by deploy scripts to pre-install the activate-mhsm.sh script. Leave empty to skip."
+      }
+    },
+    "logsResourceGroupName": {
+      "type": "string",
+      "defaultValue": "MHSM-HSB-LOGS-RG",
+      "metadata": {
+        "description": "Resource group for logging resources (storage account and Log Analytics workspace)."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage account name for diagnostic logs. Leave empty to auto-generate a unique name."
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics workspace name for diagnostic logs. Leave empty to auto-generate a unique name."
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 365,
+      "minValue": 1,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Number of days to retain diagnostic logs in the Log Analytics workspace (1-730). Default: 365."
+      }
+    }
+  },
+  "variables": {
+    "managedHsmNameResolved": "[if(empty(parameters('managedHsmName')), format('mhsm-{0}', uniqueString(subscription().subscriptionId, deployment().name, 'managedHsm')), parameters('managedHsmName'))]",
+    "storageAccountNameResolved": "[if(empty(parameters('storageAccountName')), format('mhsmlogs{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('logsResourceGroupName'))), parameters('storageAccountName'))]",
+    "logAnalyticsWorkspaceNameResolved": "[if(empty(parameters('logAnalyticsWorkspaceName')), format('mhsm-logs-{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('logsResourceGroupName'))), parameters('logAnalyticsWorkspaceName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('clientResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Managed HSM client networking",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('serverResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Azure Managed HSM",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "managedHsmDeployment",
+      "resourceGroup": "[parameters('serverResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('serverResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "managedHsmName": { "value": "[variables('managedHsmNameResolved')]" },
+          "hsmSkuName": { "value": "[parameters('hsmSkuName')]" },
+          "tenantId": { "value": "[parameters('tenantId')]" },
+          "initialAdminObjectIds": { "value": "[parameters('initialAdminObjectIds')]" },
+          "softDeleteRetentionInDays": { "value": "[parameters('softDeleteRetentionInDays')]" },
+          "enablePurgeProtection": { "value": "[parameters('enablePurgeProtection')]" },
+          "networkAclDefaultAction": { "value": "[parameters('networkAclDefaultAction')]" },
+          "firewallIpRules": { "value": "[parameters('firewallIpRules')]" },
+          "enablePrivateEndpoint": { "value": "[parameters('enablePrivateEndpoint')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "managedHsmName": { "type": "string" },
+            "hsmSkuName": { "type": "string" },
+            "tenantId": { "type": "string" },
+            "initialAdminObjectIds": { "type": "array" },
+            "softDeleteRetentionInDays": { "type": "int" },
+            "enablePurgeProtection": { "type": "bool" },
+            "networkAclDefaultAction": { "type": "string" },
+            "firewallIpRules": { "type": "array" },
+            "enablePrivateEndpoint": { "type": "bool" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/managedHSMs",
+              "apiVersion": "2023-07-01",
+              "name": "[parameters('managedHsmName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "family": "B",
+                "name": "[parameters('hsmSkuName')]"
+              },
+              "properties": {
+                "tenantId": "[parameters('tenantId')]",
+                "initialAdminObjectIds": "[parameters('initialAdminObjectIds')]",
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": "[parameters('softDeleteRetentionInDays')]",
+                "enablePurgeProtection": "[parameters('enablePurgeProtection')]",
+                "publicNetworkAccess": "[if(parameters('enablePrivateEndpoint'), 'Disabled', 'Enabled')]",
+                "networkAcls": {
+                  "defaultAction": "[parameters('networkAclDefaultAction')]",
+                  "bypass": "AzureServices",
+                  "ipRules": "[parameters('firewallIpRules')]"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "managedHsmUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/managedHSMs', parameters('managedHsmName'))).hsmUri]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[parameters('enablePrivateEndpoint')]",
+      "name": "networkingDeployment",
+      "resourceGroup": "[parameters('clientResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('clientResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vnetName": { "value": "[parameters('vnetName')]" },
+          "vnetAddressPrefix": { "value": "[parameters('vnetAddressPrefix')]" },
+          "subnetName": { "value": "[parameters('subnetName')]" },
+          "subnetAddressPrefix": { "value": "[parameters('subnetAddressPrefix')]" },
+          "privateDnsZoneName": { "value": "[parameters('privateDnsZoneName')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vnetName": { "type": "string" },
+            "vnetAddressPrefix": { "type": "string" },
+            "subnetName": { "type": "string" },
+            "subnetAddressPrefix": { "type": "string" },
+            "privateDnsZoneName": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('subnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('subnetAddressPrefix')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('privateDnsZoneName')]",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}/privateDnsLink', parameters('privateDnsZoneName'))]",
+              "location": "global",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ],
+              "properties": {
+                "virtualNetwork": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                },
+                "registrationEnabled": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[parameters('enablePrivateEndpoint')]",
+      "name": "privateEndpointDeployment",
+      "resourceGroup": "[parameters('clientResourceGroupName')]",
+      "dependsOn": [
+        "networkingDeployment",
+        "managedHsmDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "privateEndpointName": { "value": "[parameters('privateEndpointName')]" },
+          "vnetName": { "value": "[parameters('vnetName')]" },
+          "subnetName": { "value": "[parameters('subnetName')]" },
+          "privateDnsZoneName": { "value": "[parameters('privateDnsZoneName')]" },
+          "serverResourceGroupName": { "value": "[parameters('serverResourceGroupName')]" },
+          "managedHsmName": { "value": "[variables('managedHsmNameResolved')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "privateEndpointName": { "type": "string" },
+            "vnetName": { "type": "string" },
+            "subnetName": { "type": "string" },
+            "privateDnsZoneName": { "type": "string" },
+            "serverResourceGroupName": { "type": "string" },
+            "managedHsmName": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('privateEndpointName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[parameters('privateEndpointName')]",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId(parameters('serverResourceGroupName'), 'Microsoft.KeyVault/managedHSMs', parameters('managedHsmName'))]",
+                      "groupIds": [
+                        "managedhsm"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[format('{0}/default', parameters('privateEndpointName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('privateEndpointName'))]"
+              ],
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "managedHsmPrivateDnsConfig",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('logsResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Managed HSM diagnostic logging",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "loggingDeployment",
+      "resourceGroup": "[parameters('logsResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('logsResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "storageAccountName": { "value": "[variables('storageAccountNameResolved')]" },
+          "logAnalyticsWorkspaceName": { "value": "[variables('logAnalyticsWorkspaceNameResolved')]" },
+          "logRetentionDays": { "value": "[parameters('logRetentionDays')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "storageAccountName": { "type": "string" },
+            "logAnalyticsWorkspaceName": { "type": "string" },
+            "logRetentionDays": { "type": "int" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              },
+              "tags": {
+                "purpose": "Managed HSM diagnostic logs",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('logRetentionDays')]"
+              },
+              "tags": {
+                "purpose": "Managed HSM diagnostic logs",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "diagnosticSettingDeployment",
+      "resourceGroup": "[parameters('serverResourceGroupName')]",
+      "dependsOn": [
+        "managedHsmDeployment",
+        "loggingDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "managedHsmName": { "value": "[variables('managedHsmNameResolved')]" },
+          "storageAccountId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Storage/storageAccounts/{2}', subscription().subscriptionId, parameters('logsResourceGroupName'), variables('storageAccountNameResolved'))]" },
+          "workspaceId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.OperationalInsights/workspaces/{2}', subscription().subscriptionId, parameters('logsResourceGroupName'), variables('logAnalyticsWorkspaceNameResolved'))]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "managedHsmName": { "type": "string" },
+            "storageAccountId": { "type": "string" },
+            "workspaceId": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.KeyVault/managedHSMs/{0}', parameters('managedHsmName'))]",
+              "name": "hsb-diagnostic-setting",
+              "properties": {
+                "storageAccountId": "[parameters('storageAccountId')]",
+                "workspaceId": "[parameters('workspaceId')]",
+                "logs": [
+                  {
+                    "category": "AuditEvent",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "[parameters('adminVmResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Managed HSM admin virtual machine",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "adminVmDeployment",
+      "resourceGroup": "[parameters('adminVmResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('adminVmResourceGroupName'))]",
+        "privateEndpointDeployment",
+        "networkingDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" },
+          "vmSize": { "value": "[parameters('vmSize')]" },
+          "vmImagePublisher": { "value": "[parameters('vmImagePublisher')]" },
+          "vmImageOffer": { "value": "[parameters('vmImageOffer')]" },
+          "vmImageSku": { "value": "[parameters('vmImageSku')]" },
+          "vmImageVersion": { "value": "[parameters('vmImageVersion')]" },
+          "adminUsername": { "value": "[parameters('adminUsername')]" },
+          "authenticationType": { "value": "[parameters('authenticationType')]" },
+          "adminPasswordOrKey": { "value": "[parameters('adminPasswordOrKey')]" },
+          "vmCustomData": { "value": "[parameters('vmCustomData')]" },
+          "subnetId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('subnetName'))]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vmName": { "type": "string" },
+            "vmSize": { "type": "string" },
+            "vmImagePublisher": { "type": "string" },
+            "vmImageOffer": { "type": "string" },
+            "vmImageSku": { "type": "string" },
+            "vmImageVersion": { "type": "string" },
+            "adminUsername": { "type": "string" },
+            "authenticationType": { "type": "string" },
+            "adminPasswordOrKey": { "type": "secureString" },
+            "vmCustomData": { "type": "string" },
+            "subnetId": { "type": "string" }
+          },
+          "variables": {
+            "nsgName": "[format('{0}-nsg', parameters('vmName'))]",
+            "nicName": "[format('{0}-nic', parameters('vmName'))]",
+            "pipName": "[format('{0}-pip', parameters('vmName'))]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                    "keyData": "[parameters('adminPasswordOrKey')]"
+                  }
+                ]
+              }
+            }
+          },
+          "resources": [
+
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nsgName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 1000,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "22"
+                    }
+                  },
+                  {
+                    "name": "AllowRDP",
+                    "properties": {
+                      "priority": 1001,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "3389"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ],
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ],
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ],
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "[parameters('vmImagePublisher')]",
+                    "offer": "[parameters('vmImageOffer')]",
+                    "sku": "[parameters('vmImageSku')]",
+                    "version": "[parameters('vmImageVersion')]"
+                  },
+                  "osDisk": {
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    }
+                  }
+                },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPasswordOrKey')]",
+                  "customData": "[if(empty(parameters('vmCustomData')), json('null'), parameters('vmCustomData'))]",
+                  "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'sshPublicKey'), variables('linuxConfiguration'), json('null'))]"
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "managedHsmName": {
+      "type": "string",
+      "value": "[variables('managedHsmNameResolved')]"
+    },
+    "managedHsmResourceId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.KeyVault/managedHSMs/{2}', subscription().subscriptionId, parameters('serverResourceGroupName'), variables('managedHsmNameResolved'))]"
+    },
+    "managedHsmUri": {
+      "type": "string",
+      "value": "[reference('managedHsmDeployment').outputs.managedHsmUri.value]"
+    },
+    "privateEndpointName": {
+      "condition": "[parameters('enablePrivateEndpoint')]",
+      "type": "string",
+      "value": "[parameters('privateEndpointName')]"
+    },
+    "vnetResourceId": {
+      "condition": "[parameters('enablePrivateEndpoint')]",
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'))]"
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('clientResourceGroupName')]"
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('serverResourceGroupName')]"
+    },
+    "adminVmResourceGroupName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('adminVmResourceGroupName')]"
+    },
+    "adminVmName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('vmName')]"
+    },
+    "logsResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('logsResourceGroupName')]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountNameResolved')]"
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "value": "[variables('logAnalyticsWorkspaceNameResolved')]"
+    }
+  }
+}

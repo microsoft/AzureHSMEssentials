@@ -1,0 +1,93 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "UK West"
+    },
+    "clientResourceGroupName": {
+      "value": "MHSM-HSB-CLIENT-RG"
+    },
+    "serverResourceGroupName": {
+      "value": "MHSM-HSB-HSM-RG"
+    },
+    "vnetName": {
+      "value": "mhsmclient-vnet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.1.0.0/16"
+    },
+    "subnetName": {
+      "value": "default"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.1.0.0/24"
+    },
+    "privateDnsZoneName": {
+      "value": "privatelink.managedhsm.azure.net"
+    },
+    "managedHsmName": {
+      "value": ""
+    },
+    "hsmSkuName": {
+      "value": "Standard_B1"
+    },
+    "initialAdminObjectIds": {
+      "value": []
+    },
+    "softDeleteRetentionInDays": {
+      "value": 90
+    },
+    "enablePurgeProtection": {
+      "value": true
+    },
+    "enablePrivateEndpoint": {
+      "value": true
+    },
+    "privateEndpointName": {
+      "value": "mhsm-client-private-endpoint"
+    },
+    "networkAclDefaultAction": {
+      "value": "Deny"
+    },
+    "firewallIpRules": {
+      "value": []
+    },
+    "adminVmResourceGroupName": {
+      "value": "MHSM-HSB-ADMINVM-RG"
+    },
+    "vmName": {
+      "value": "mhsm-admin-vm"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "vmImagePublisher": {
+      "value": "Canonical"
+    },
+    "vmImageOffer": {
+      "value": "ubuntu-24_04-lts"
+    },
+    "vmImageSku": {
+      "value": "server"
+    },
+    "adminUsername": {
+      "value": "mhsmVMAdmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "logsResourceGroupName": {
+      "value": "MHSM-HSB-LOGS-RG"
+    },
+    "storageAccountName": {
+      "value": ""
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": ""
+    },
+    "logRetentionDays": {
+      "value": 365
+    }
+  }
+}

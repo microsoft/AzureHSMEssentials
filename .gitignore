@@ -1,0 +1,67 @@
+# .gitignore for HSM Scenario Builder
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+
+# Models (large files)
+models/saved/*.pkl
+models/saved/*.h5
+models/saved/*.keras
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Azure Functions
+azure_functions/.python_packages/
+azure_functions/local.settings.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage
+htmlcov/
+.coverage
+.coverage.*
+
+# Secrets, certs, keys -- never commit these
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
+*.csr
+*.jks
+*.keystore
+*.pkcs12
+secrets.json
+appsettings.*.json
+!appsettings.example.json
+*.log
+
+# Local config
+local.settings.json
+*.local.json

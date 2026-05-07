@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "UK West"
+    },
+    "eventHubNamespaceName": {
+      "value": "chsm-hsb-eventhub-ns"
+    },
+    "eventHubName": {
+      "value": "cloudhsm-logs"
+    },
+    "namespaceSku": {
+      "value": "Standard"
+    },
+    "namespaceCapacity": {
+      "value": 1
+    },
+    "partitionCount": {
+      "value": 2
+    },
+    "messageRetentionInDays": {
+      "value": 7
+    },
+    "consumerGroupName": {
+      "value": "hsm-scenario-builder"
+    }
+  }
+}

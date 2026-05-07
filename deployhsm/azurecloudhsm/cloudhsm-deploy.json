@@ -1,0 +1,1001 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys Azure Cloud HSM with networking, private endpoint, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking, HSM cluster, and (optionally) an admin virtual machine connected to the same VNet."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for all resources."
+      }
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for networking resources and the private endpoint."
+      }
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for the Cloud HSM cluster."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual network."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address space for the virtual network."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the subnet within the virtual network."
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address prefix for the subnet."
+      }
+    },
+    "privateDnsZoneName": {
+      "type": "string",
+      "metadata": {
+        "description": "Private DNS zone name for Cloud HSM private link."
+      }
+    },
+    "hsmClusterName": {
+      "type": "string",
+      "metadata": {
+        "description": "Globally unique name for the Cloud HSM cluster (3-24 chars, alphanumeric and hyphens). Leave empty to auto-generate a unique name from the subscription ID."
+      }
+    },
+    "hsmSkuFamily": {
+      "type": "string",
+      "allowedValues": [
+        "B"
+      ],
+      "metadata": {
+        "description": "SKU family for the Cloud HSM cluster."
+      }
+    },
+    "hsmSkuName": {
+      "type": "string",
+      "allowedValues": [
+        "Standard_B1"
+      ],
+      "metadata": {
+        "description": "SKU name for the Cloud HSM cluster."
+      }
+    },
+    "privateEndpointName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the private endpoint connecting the client VNet to the Cloud HSM cluster."
+      }
+    },
+    "adminVmResourceGroupName": {
+      "type": "string",
+      "defaultValue": "CHSM-HSB-ADMINVM-RG",
+      "metadata": {
+        "description": "Resource group for the admin virtual machine."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "chsm-admin-vm",
+      "metadata": {
+        "description": "Name of the admin virtual machine."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "Size of the admin virtual machine (2 vCPUs, 8 GiB memory)."
+      }
+    },
+    "vmImagePublisher": {
+      "type": "string",
+      "defaultValue": "Canonical",
+      "metadata": {
+        "description": "VM image publisher. Use 'Canonical' for Ubuntu, 'MicrosoftWindowsServer' for Windows."
+      }
+    },
+    "vmImageOffer": {
+      "type": "string",
+      "defaultValue": "ubuntu-24_04-lts",
+      "metadata": {
+        "description": "VM image offer. Use 'ubuntu-24_04-lts' for Ubuntu 24.04, 'WindowsServer' for Windows."
+      }
+    },
+    "vmImageSku": {
+      "type": "string",
+      "defaultValue": "server",
+      "metadata": {
+        "description": "VM image SKU. Use 'server' for Ubuntu 24.04 LTS Gen2, '2022-datacenter-g2' for Windows Server 2022 Gen2."
+      }
+    },
+    "vmImageVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "VM image version."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "chsmVMAdmin",
+      "metadata": {
+        "description": "Admin username for the virtual machine."
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "sshPublicKey",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Authentication type: SSH public key (Linux) or password (Linux/Windows)."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SSH public key or password for the admin VM. If empty, the admin VM will not be deployed."
+      }
+    },
+    "logsResourceGroupName": {
+      "type": "string",
+      "defaultValue": "CHSM-HSB-LOGS-RG",
+      "metadata": {
+        "description": "Resource group for logging resources (storage account and Log Analytics workspace)."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage account name for diagnostic logs. Leave empty to auto-generate a unique name."
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Log Analytics workspace name for diagnostic logs. Leave empty to auto-generate a unique name."
+      }
+    },
+    "logRetentionDays": {
+      "type": "int",
+      "defaultValue": 365,
+      "minValue": 1,
+      "maxValue": 730,
+      "metadata": {
+        "description": "Number of days to retain diagnostic logs in the Log Analytics workspace (1-730). Default: 365."
+      }
+    },
+    "logsLocation": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure region for logging resources (Storage Account and Log Analytics workspace). Defaults to the main location if empty. Use this when the main location (e.g. EUAP) does not support Log Analytics."
+      }
+    },
+    "enableCertificateStorage": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Deploy certificate object storage (Blob Storage, Managed Identity, RBAC) for PKCS#11 applications. Requires an admin VM for access."
+      }
+    },
+    "certResourceGroupName": {
+      "type": "string",
+      "defaultValue": "CHSM-HSB-CERT-RG",
+      "metadata": {
+        "description": "Resource group for certificate object storage resources."
+      }
+    },
+    "certStorageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Storage account name for certificate object storage. Leave empty to auto-generate a unique name."
+      }
+    },
+    "certContainerName": {
+      "type": "string",
+      "defaultValue": "certificates",
+      "metadata": {
+        "description": "Blob container name for certificate object storage."
+      }
+    },
+    "certManagedIdentityName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "User Assigned Managed Identity name for certificate storage access. Leave empty to auto-generate."
+      }
+    },
+    "resourceTags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Optional resource tags to apply to the Cloud HSM cluster (e.g., {\"EnableHsmAuditPolicy\": \"true\"})."
+      }
+    },
+    "hsmLocation": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure region for the Cloud HSM cluster. Defaults to the main location if empty."
+      }
+    }
+  },
+  "variables": {
+    "hsmClusterNameResolved": "[if(empty(parameters('hsmClusterName')), format('chsm-{0}', uniqueString(subscription().subscriptionId, deployment().name, 'cloudHsmCluster')), parameters('hsmClusterName'))]",
+    "storageAccountNameResolved": "[if(empty(parameters('storageAccountName')), format('chsmlogs{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('logsResourceGroupName'))), parameters('storageAccountName'))]",
+    "logAnalyticsWorkspaceNameResolved": "[if(empty(parameters('logAnalyticsWorkspaceName')), format('chsm-logs-{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('logsResourceGroupName'))), parameters('logAnalyticsWorkspaceName'))]",
+    "logsLocationResolved": "[if(empty(parameters('logsLocation')), parameters('location'), parameters('logsLocation'))]",
+    "hsmLocationResolved": "[if(empty(parameters('hsmLocation')), parameters('location'), parameters('hsmLocation'))]",
+    "certStorageAccountNameResolved": "[if(empty(parameters('certStorageAccountName')), format('chsmcerts{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('certResourceGroupName'))), parameters('certStorageAccountName'))]",
+    "certManagedIdentityNameResolved": "[if(empty(parameters('certManagedIdentityName')), format('chsm-cert-identity-{0}', uniqueString(subscription().subscriptionId, deployment().name, parameters('certResourceGroupName'))), parameters('certManagedIdentityName'))]",
+    "certManagedIdentityResourceId": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{2}', subscription().subscriptionId, parameters('certResourceGroupName'), variables('certManagedIdentityNameResolved'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('clientResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Cloud HSM client networking",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('serverResourceGroupName')]",
+      "location": "[variables('hsmLocationResolved')]",
+      "tags": {
+        "purpose": "Cloud HSM cluster",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "hsmClusterDeployment",
+      "resourceGroup": "[parameters('serverResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('serverResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "outer"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": [
+            {
+              "type": "Microsoft.HardwareSecurityModules/cloudHsmClusters",
+              "apiVersion": "2024-06-30-preview",
+              "name": "[variables('hsmClusterNameResolved')]",
+              "location": "[variables('hsmLocationResolved')]",
+              "tags": "[union(createObject('purpose', 'Cloud HSM cluster', 'deployedBy', 'hsm-scenario-builder'), parameters('resourceTags'))]",
+              "sku": {
+                "family": "[parameters('hsmSkuFamily')]",
+                "name": "[parameters('hsmSkuName')]"
+              },
+              "properties": {}
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "networkingDeployment",
+      "resourceGroup": "[parameters('clientResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('clientResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vnetName": { "value": "[parameters('vnetName')]" },
+          "vnetAddressPrefix": { "value": "[parameters('vnetAddressPrefix')]" },
+          "subnetName": { "value": "[parameters('subnetName')]" },
+          "subnetAddressPrefix": { "value": "[parameters('subnetAddressPrefix')]" },
+          "privateDnsZoneName": { "value": "[parameters('privateDnsZoneName')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vnetName": { "type": "string" },
+            "vnetAddressPrefix": { "type": "string" },
+            "subnetName": { "type": "string" },
+            "subnetAddressPrefix": { "type": "string" },
+            "privateDnsZoneName": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('subnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('subnetAddressPrefix')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('privateDnsZoneName')]",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}/privateDnsLink', parameters('privateDnsZoneName'))]",
+              "location": "global",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ],
+              "properties": {
+                "virtualNetwork": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+                },
+                "registrationEnabled": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "privateEndpointDeployment",
+      "resourceGroup": "[parameters('clientResourceGroupName')]",
+      "dependsOn": [
+        "networkingDeployment",
+        "hsmClusterDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "privateEndpointName": { "value": "[parameters('privateEndpointName')]" },
+          "vnetName": { "value": "[parameters('vnetName')]" },
+          "subnetName": { "value": "[parameters('subnetName')]" },
+          "privateDnsZoneName": { "value": "[parameters('privateDnsZoneName')]" },
+          "serverResourceGroupName": { "value": "[parameters('serverResourceGroupName')]" },
+          "hsmClusterName": { "value": "[variables('hsmClusterNameResolved')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "privateEndpointName": { "type": "string" },
+            "vnetName": { "type": "string" },
+            "subnetName": { "type": "string" },
+            "privateDnsZoneName": { "type": "string" },
+            "serverResourceGroupName": { "type": "string" },
+            "hsmClusterName": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('privateEndpointName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[parameters('privateEndpointName')]",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId(parameters('serverResourceGroupName'), 'Microsoft.HardwareSecurityModules/cloudHsmClusters', parameters('hsmClusterName'))]",
+                      "groupIds": [
+                        "cloudHSM"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[format('{0}/default', parameters('privateEndpointName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('privateEndpointName'))]"
+              ],
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "cloudHsmPrivateDnsConfig",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', parameters('privateDnsZoneName'))]"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('logsResourceGroupName')]",
+      "location": "[variables('logsLocationResolved')]",
+      "tags": {
+        "purpose": "Cloud HSM diagnostic logging",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "loggingDeployment",
+      "resourceGroup": "[parameters('logsResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('logsResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[variables('logsLocationResolved')]" },
+          "storageLocation": { "value": "[parameters('location')]" },
+          "storageAccountName": { "value": "[variables('storageAccountNameResolved')]" },
+          "logAnalyticsWorkspaceName": { "value": "[variables('logAnalyticsWorkspaceNameResolved')]" },
+          "logRetentionDays": { "value": "[parameters('logRetentionDays')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "storageLocation": { "type": "string" },
+            "storageAccountName": { "type": "string" },
+            "logAnalyticsWorkspaceName": { "type": "string" },
+            "logRetentionDays": { "type": "int" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('storageLocation')]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              },
+              "tags": {
+                "purpose": "Cloud HSM diagnostic logs",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            },
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "PerGB2018"
+                },
+                "retentionInDays": "[parameters('logRetentionDays')]"
+              },
+              "tags": {
+                "purpose": "Cloud HSM diagnostic logs",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "diagnosticSettingDeployment",
+      "resourceGroup": "[parameters('serverResourceGroupName')]",
+      "dependsOn": [
+        "hsmClusterDeployment",
+        "loggingDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "hsmClusterName": { "value": "[variables('hsmClusterNameResolved')]" },
+          "storageAccountId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Storage/storageAccounts/{2}', subscription().subscriptionId, parameters('logsResourceGroupName'), variables('storageAccountNameResolved'))]" },
+          "workspaceId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.OperationalInsights/workspaces/{2}', subscription().subscriptionId, parameters('logsResourceGroupName'), variables('logAnalyticsWorkspaceNameResolved'))]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "hsmClusterName": { "type": "string" },
+            "storageAccountId": { "type": "string" },
+            "workspaceId": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "scope": "[format('Microsoft.HardwareSecurityModules/cloudHsmClusters/{0}', parameters('hsmClusterName'))]",
+              "name": "hsb-diagnostic-setting",
+              "properties": {
+                "storageAccountId": "[parameters('storageAccountId')]",
+                "workspaceId": "[parameters('workspaceId')]",
+                "logs": [
+                  {
+                    "category": "HsmServiceOperations",
+                    "enabled": true
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "[parameters('adminVmResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Cloud HSM admin virtual machine",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "adminVmDeployment",
+      "resourceGroup": "[parameters('adminVmResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('adminVmResourceGroupName'))]",
+        "privateEndpointDeployment",
+        "certStorageDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" },
+          "vmSize": { "value": "[parameters('vmSize')]" },
+          "vmImagePublisher": { "value": "[parameters('vmImagePublisher')]" },
+          "vmImageOffer": { "value": "[parameters('vmImageOffer')]" },
+          "vmImageSku": { "value": "[parameters('vmImageSku')]" },
+          "vmImageVersion": { "value": "[parameters('vmImageVersion')]" },
+          "adminUsername": { "value": "[parameters('adminUsername')]" },
+          "authenticationType": { "value": "[parameters('authenticationType')]" },
+          "adminPasswordOrKey": { "value": "[parameters('adminPasswordOrKey')]" },
+          "subnetId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('subnetName'))]" },
+          "assignManagedIdentity": { "value": "[parameters('enableCertificateStorage')]" },
+          "managedIdentityResourceId": { "value": "[variables('certManagedIdentityResourceId')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vmName": { "type": "string" },
+            "vmSize": { "type": "string" },
+            "vmImagePublisher": { "type": "string" },
+            "vmImageOffer": { "type": "string" },
+            "vmImageSku": { "type": "string" },
+            "vmImageVersion": { "type": "string" },
+            "adminUsername": { "type": "string" },
+            "authenticationType": { "type": "string" },
+            "adminPasswordOrKey": { "type": "secureString" },
+            "subnetId": { "type": "string" },
+            "assignManagedIdentity": { "type": "bool" },
+            "managedIdentityResourceId": { "type": "string" }
+          },
+          "variables": {
+            "nsgName": "[format('{0}-nsg', parameters('vmName'))]",
+            "nicName": "[format('{0}-nic', parameters('vmName'))]",
+            "pipName": "[format('{0}-pip', parameters('vmName'))]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                    "keyData": "[parameters('adminPasswordOrKey')]"
+                  }
+                ]
+              }
+            }
+          },
+          "resources": [
+
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nsgName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 1000,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "22"
+                    }
+                  },
+                  {
+                    "name": "AllowRDP",
+                    "properties": {
+                      "priority": 1001,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "3389"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ],
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ],
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ],
+              "identity": "[if(parameters('assignManagedIdentity'), createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(parameters('managedIdentityResourceId'), createObject())), json('null'))]",
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "[parameters('vmImagePublisher')]",
+                    "offer": "[parameters('vmImageOffer')]",
+                    "sku": "[parameters('vmImageSku')]",
+                    "version": "[parameters('vmImageVersion')]"
+                  },
+                  "osDisk": {
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    }
+                  }
+                },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPasswordOrKey')]",
+                  "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'sshPublicKey'), variables('linuxConfiguration'), json('null'))]"
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableCertificateStorage')]",
+      "name": "[parameters('certResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Cloud HSM certificate object storage",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[parameters('enableCertificateStorage')]",
+      "name": "certStorageDeployment",
+      "resourceGroup": "[parameters('certResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('certResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "storageAccountName": { "value": "[variables('certStorageAccountNameResolved')]" },
+          "containerName": { "value": "[parameters('certContainerName')]" },
+          "managedIdentityName": { "value": "[variables('certManagedIdentityNameResolved')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "storageAccountName": { "type": "string" },
+            "containerName": { "type": "string" },
+            "managedIdentityName": { "type": "string" }
+          },
+          "variables": {
+            "storageBlobDataContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "kind": "StorageV2",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              },
+              "tags": {
+                "purpose": "Cloud HSM certificate object storage",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+              "apiVersion": "2023-05-01",
+              "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ],
+              "properties": {
+                "publicAccess": "None"
+              }
+            },
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2023-01-31",
+              "name": "[parameters('managedIdentityName')]",
+              "location": "[parameters('location')]",
+              "tags": {
+                "purpose": "Cloud HSM certificate storage access",
+                "deployedBy": "hsm-scenario-builder"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.Storage/storageAccounts/{0}', parameters('storageAccountName'))]",
+              "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName')), variables('storageBlobDataContributorRoleId'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]"
+              ],
+              "properties": {
+                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('storageBlobDataContributorRoleId'))]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))).principalId]",
+                "principalType": "ServicePrincipal"
+              }
+            }
+          ],
+          "outputs": {
+            "managedIdentityClientId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))).clientId]"
+            },
+            "containerUrl": {
+              "type": "string",
+              "value": "[format('https://{0}.blob.core.windows.net/{1}', parameters('storageAccountName'), parameters('containerName'))]"
+            },
+            "managedIdentityResourceId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('managedIdentityName'))]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "hsmClusterName": {
+      "type": "string",
+      "value": "[variables('hsmClusterNameResolved')]"
+    },
+    "hsmClusterResourceId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.HardwareSecurityModules/cloudHsmClusters/{2}', subscription().subscriptionId, parameters('serverResourceGroupName'), variables('hsmClusterNameResolved'))]"
+    },
+    "privateEndpointName": {
+      "type": "string",
+      "value": "[parameters('privateEndpointName')]"
+    },
+    "vnetResourceId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'))]"
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('clientResourceGroupName')]"
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('serverResourceGroupName')]"
+    },
+    "adminVmResourceGroupName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('adminVmResourceGroupName')]"
+    },
+    "adminVmName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('vmName')]"
+    },
+    "logsResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('logsResourceGroupName')]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountNameResolved')]"
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "value": "[variables('logAnalyticsWorkspaceNameResolved')]"
+    },
+    "certResourceGroupName": {
+      "condition": "[parameters('enableCertificateStorage')]",
+      "type": "string",
+      "value": "[parameters('certResourceGroupName')]"
+    },
+    "certStorageAccountName": {
+      "condition": "[parameters('enableCertificateStorage')]",
+      "type": "string",
+      "value": "[variables('certStorageAccountNameResolved')]"
+    },
+    "certContainerUrl": {
+      "condition": "[parameters('enableCertificateStorage')]",
+      "type": "string",
+      "value": "[format('https://{0}.blob.core.windows.net/{1}', variables('certStorageAccountNameResolved'), parameters('certContainerName'))]"
+    },
+    "certManagedIdentityName": {
+      "condition": "[parameters('enableCertificateStorage')]",
+      "type": "string",
+      "value": "[variables('certManagedIdentityNameResolved')]"
+    },
+    "certManagedIdentityClientId": {
+      "condition": "[parameters('enableCertificateStorage')]",
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('certResourceGroupName')), 'Microsoft.Resources/deployments', 'certStorageDeployment')).outputs.managedIdentityClientId.value]"
+    }
+  }
+}

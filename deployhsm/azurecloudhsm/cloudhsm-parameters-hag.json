@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "UK West"
+    },
+    "clientResourceGroupName": {
+      "value": "CHSM-HAG-CLIENT-RG"
+    },
+    "serverResourceGroupName": {
+      "value": "CHSM-HAG-HSM-RG"
+    },
+    "vnetName": {
+      "value": "chsmclient-vnet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.0.0.0/16"
+    },
+    "subnetName": {
+      "value": "default"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.0.2.0/24"
+    },
+    "privateDnsZoneName": {
+      "value": "privatelink.cloudhsm.azure.net"
+    },
+    "hsmClusterName": {
+      "value": ""
+    },
+    "hsmSkuFamily": {
+      "value": "B"
+    },
+    "hsmSkuName": {
+      "value": "Standard_B1"
+    },
+    "privateEndpointName": {
+      "value": "chsm-client-private-endpoint"
+    },
+    "adminVmResourceGroupName": {
+      "value": "CHSM-HAG-ADMINVM-RG"
+    },
+    "vmName": {
+      "value": "chsm-admin-vm"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "vmImagePublisher": {
+      "value": "Canonical"
+    },
+    "vmImageOffer": {
+      "value": "ubuntu-24_04-lts"
+    },
+    "vmImageSku": {
+      "value": "server"
+    },
+    "adminUsername": {
+      "value": "chsmVMAdmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "logsResourceGroupName": {
+      "value": "CHSM-HAG-LOGS-RG"
+    },
+    "storageAccountName": {
+      "value": ""
+    },
+    "logAnalyticsWorkspaceName": {
+      "value": ""
+    },
+    "logRetentionDays": {
+      "value": 365
+    },
+    "logsLocation": {
+      "value": ""
+    },
+    "enableCertificateStorage": {
+      "value": false
+    },
+    "certResourceGroupName": {
+      "value": "CHSM-HAG-CERT-RG"
+    },
+    "certStorageAccountName": {
+      "value": ""
+    },
+    "certContainerName": {
+      "value": "certificates"
+    },
+    "certManagedIdentityName": {
+      "value": ""
+    },
+    "resourceTags": {
+      "value": {}
+    },
+    "hsmLocation": {
+      "value": ""
+    }
+  }
+}

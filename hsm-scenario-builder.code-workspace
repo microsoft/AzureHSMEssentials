@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"name": "hsm-scenario-builder",
+			"path": "."
+		},
+		{
+			"name": "migration",
+			"path": "../migration"
+		}
+	],
+	"settings": {
+		"debug.internalConsoleOptions": "neverOpen",
+		"chat.tools.terminal.autoApprove": {
+			"Test-Path": true,
+			"ForEach-Object": true
+		},
+		"chat.agent.maxRequests": 1000
+	}
+}

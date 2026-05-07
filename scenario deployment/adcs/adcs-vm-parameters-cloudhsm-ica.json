@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "UK West"
+    },
+    "adcsResourceGroupName": {
+      "value": "CHSM-HSB-ADCS-VM"
+    },
+    "existingVnetResourceGroupName": {
+      "value": "CHSM-HSB-CLIENT-RG"
+    },
+    "existingVnetName": {
+      "value": "chsmclient-vnet"
+    },
+    "existingSubnetName": {
+      "value": "default"
+    },
+    "vmName": {
+      "value": "chsm-adcs-ica"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "adminUsername": {
+      "value": "chsmVMAdmin"
+    }
+  }
+}

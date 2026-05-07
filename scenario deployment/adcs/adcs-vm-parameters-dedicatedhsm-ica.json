@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "Australia East"
+    },
+    "adcsResourceGroupName": {
+      "value": "DHSM-HSB-ADCS-VM"
+    },
+    "existingVnetResourceGroupName": {
+      "value": "DHSM-HSB-CLIENT-RG"
+    },
+    "existingVnetName": {
+      "value": "dhsmclient-vnet"
+    },
+    "existingSubnetName": {
+      "value": "default"
+    },
+    "vmName": {
+      "value": "dhsm-adcs-ica"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "adminUsername": {
+      "value": "dhsmVMAdmin"
+    }
+  }
+}

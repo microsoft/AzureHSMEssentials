@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "Australia East"
+    },
+    "clientResourceGroupName": {
+      "value": "DHSM-HSB-CLIENT-RG"
+    },
+    "serverResourceGroupName": {
+      "value": "DHSM-HSB-HSM-RG"
+    },
+    "vnetName": {
+      "value": "dhsmclient-vnet"
+    },
+    "vnetAddressPrefix": {
+      "value": "10.3.0.0/16"
+    },
+    "subnetName": {
+      "value": "default"
+    },
+    "subnetAddressPrefix": {
+      "value": "10.3.0.0/24"
+    },
+    "hsmSubnetName": {
+      "value": "hsmSubnet"
+    },
+    "hsmSubnetAddressPrefix": {
+      "value": "10.3.1.0/24"
+    },
+    "dedicatedHsmName": {
+      "value": ""
+    },
+    "hsmSkuName": {
+      "value": "SafeNet Luna Network HSM A790"
+    },
+    "stampId": {
+      "value": "stamp1"
+    },
+    "adminVmResourceGroupName": {
+      "value": "DHSM-HSB-ADMINVM-RG"
+    },
+    "vmName": {
+      "value": "dhsm-admin-vm"
+    },
+    "vmSize": {
+      "value": "Standard_D2s_v3"
+    },
+    "vmImagePublisher": {
+      "value": "RedHat"
+    },
+    "vmImageOffer": {
+      "value": "RHEL"
+    },
+    "vmImageSku": {
+      "value": "8-lvm-gen2"
+    },
+    "adminUsername": {
+      "value": "dhsmVMAdmin"
+    },
+    "authenticationType": {
+      "value": "sshPublicKey"
+    },
+    "gatewaySubnetAddressPrefix": {
+      "value": "10.3.255.0/26"
+    },
+    "erGatewayName": {
+      "value": "dhsm-er-gateway"
+    }
+  }
+}

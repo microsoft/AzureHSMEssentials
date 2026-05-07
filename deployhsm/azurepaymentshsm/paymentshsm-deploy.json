@@ -1,0 +1,611 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys Azure Payment HSM (Thales payShield 10K) with networking, VNet injection via delegated subnet, and optional admin VM for HSM Scenario Builder. Creates resource groups for client networking (VNet with compute, HSM, and management subnets), the Payment HSM, and (optionally) an admin virtual machine. Azure Payment HSM is a bare-metal, single-tenant device — it does NOT support Azure Monitor diagnostic settings or Log Analytics. Logging is managed directly on the HSM appliance via the payShield Manager console."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure region for all resources. Must be a region that supports Azure Payment HSM."
+      }
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for networking resources (VNet, subnets)."
+      }
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group for the Payment HSM."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the virtual network."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address space for the virtual network."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the general-purpose subnet (for admin VM and other resources)."
+      }
+    },
+    "subnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address prefix for the general-purpose subnet."
+      }
+    },
+    "hsmSubnetName": {
+      "type": "string",
+      "defaultValue": "hsmSubnet",
+      "metadata": {
+        "description": "Name of the delegated subnet for Payment HSM. This subnet will be delegated to Microsoft.HardwareSecurityModules/dedicatedHSMs."
+      }
+    },
+    "hsmSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address prefix for the HSM-delegated subnet (minimum /24 recommended)."
+      }
+    },
+    "managementSubnetName": {
+      "type": "string",
+      "defaultValue": "hsmMgmtSubnet",
+      "metadata": {
+        "description": "Name of the management subnet for Payment HSM host management port. This subnet will also be delegated to Microsoft.HardwareSecurityModules/dedicatedHSMs."
+      }
+    },
+    "managementSubnetAddressPrefix": {
+      "type": "string",
+      "metadata": {
+        "description": "Address prefix for the management subnet (minimum /24 recommended)."
+      }
+    },
+    "paymentHsmName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name for the Payment HSM resource (3-24 chars, alphanumeric and hyphens). Leave empty to auto-generate a unique name."
+      }
+    },
+    "hsmSkuName": {
+      "type": "string",
+      "defaultValue": "payShield10K_LMK1_CPS60",
+      "allowedValues": [
+        "payShield10K_LMK1_CPS60",
+        "payShield10K_LMK1_CPS250",
+        "payShield10K_LMK1_CPS2500",
+        "payShield10K_LMK2_CPS60",
+        "payShield10K_LMK2_CPS250",
+        "payShield10K_LMK2_CPS2500"
+      ],
+      "metadata": {
+        "description": "SKU name for the Payment HSM. LMK1 vs LMK2 selects the Local Master Key type. CPS value selects crypto operations per second (60, 250, or 2500). For general-purpose HSMs (Thales Luna A790), use the Azure Dedicated HSM platform instead."
+      }
+    },
+    "stampId": {
+      "type": "string",
+      "defaultValue": "stamp1",
+      "metadata": {
+        "description": "Stamp ID for availability zone placement (e.g., stamp1, stamp2). Used to control which physical HSM stamp is used."
+      }
+    },
+    "adminVmResourceGroupName": {
+      "type": "string",
+      "defaultValue": "PHSM-HSB-ADMINVM-RG",
+      "metadata": {
+        "description": "Resource group for the admin virtual machine."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "phsm-admin-vm",
+      "metadata": {
+        "description": "Name of the admin virtual machine."
+      }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "Size of the admin virtual machine (2 vCPUs, 8 GiB memory)."
+      }
+    },
+    "vmImagePublisher": {
+      "type": "string",
+      "defaultValue": "Canonical",
+      "metadata": {
+        "description": "VM image publisher. Use 'Canonical' for Ubuntu, 'MicrosoftWindowsServer' for Windows."
+      }
+    },
+    "vmImageOffer": {
+      "type": "string",
+      "defaultValue": "ubuntu-24_04-lts",
+      "metadata": {
+        "description": "VM image offer. Use 'ubuntu-24_04-lts' for Ubuntu 24.04, 'WindowsServer' for Windows."
+      }
+    },
+    "vmImageSku": {
+      "type": "string",
+      "defaultValue": "server",
+      "metadata": {
+        "description": "VM image SKU. Use 'server' for Ubuntu 24.04 LTS Gen2, '2022-datacenter-g2' for Windows Server 2022 Gen2."
+      }
+    },
+    "vmImageVersion": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "VM image version."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "phsmVMAdmin",
+      "metadata": {
+        "description": "Admin username for the virtual machine."
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "sshPublicKey",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Authentication type: SSH public key (Linux) or password (Linux/Windows)."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "SSH public key or password for the admin VM. If empty, the admin VM will not be deployed."
+      }
+    }
+  },
+  "variables": {
+    "paymentHsmNameResolved": "[if(empty(parameters('paymentHsmName')), format('phsm-{0}', uniqueString(subscription().subscriptionId, deployment().name, 'paymentHsm')), parameters('paymentHsmName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('clientResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Payment HSM client networking",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('serverResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Payment HSM",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "networkingDeployment",
+      "resourceGroup": "[parameters('clientResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('clientResourceGroupName'))]"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vnetName": { "value": "[parameters('vnetName')]" },
+          "vnetAddressPrefix": { "value": "[parameters('vnetAddressPrefix')]" },
+          "subnetName": { "value": "[parameters('subnetName')]" },
+          "subnetAddressPrefix": { "value": "[parameters('subnetAddressPrefix')]" },
+          "hsmSubnetName": { "value": "[parameters('hsmSubnetName')]" },
+          "hsmSubnetAddressPrefix": { "value": "[parameters('hsmSubnetAddressPrefix')]" },
+          "managementSubnetName": { "value": "[parameters('managementSubnetName')]" },
+          "managementSubnetAddressPrefix": { "value": "[parameters('managementSubnetAddressPrefix')]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vnetName": { "type": "string" },
+            "vnetAddressPrefix": { "type": "string" },
+            "subnetName": { "type": "string" },
+            "subnetAddressPrefix": { "type": "string" },
+            "hsmSubnetName": { "type": "string" },
+            "hsmSubnetAddressPrefix": { "type": "string" },
+            "managementSubnetName": { "type": "string" },
+            "managementSubnetAddressPrefix": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-11-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefix')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('subnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('subnetAddressPrefix')]"
+                    }
+                  },
+                  {
+                    "name": "[parameters('hsmSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('hsmSubnetAddressPrefix')]",
+                      "delegations": [
+                        {
+                          "name": "paymentHsmDelegation",
+                          "properties": {
+                            "serviceName": "Microsoft.HardwareSecurityModules/dedicatedHSMs"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "[parameters('managementSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('managementSubnetAddressPrefix')]",
+                      "delegations": [
+                        {
+                          "name": "paymentHsmMgmtDelegation",
+                          "properties": {
+                            "serviceName": "Microsoft.HardwareSecurityModules/dedicatedHSMs"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "paymentHsmDeployment",
+      "resourceGroup": "[parameters('serverResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('serverResourceGroupName'))]",
+        "networkingDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "paymentHsmName": { "value": "[variables('paymentHsmNameResolved')]" },
+          "hsmSkuName": { "value": "[parameters('hsmSkuName')]" },
+          "stampId": { "value": "[parameters('stampId')]" },
+          "hsmSubnetId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('hsmSubnetName'))]" },
+          "managementSubnetId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('managementSubnetName'))]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "paymentHsmName": { "type": "string" },
+            "hsmSkuName": { "type": "string" },
+            "stampId": { "type": "string" },
+            "hsmSubnetId": { "type": "string" },
+            "managementSubnetId": { "type": "string" }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.HardwareSecurityModules/dedicatedHSMs",
+              "apiVersion": "2021-11-30",
+              "name": "[parameters('paymentHsmName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[parameters('hsmSkuName')]"
+              },
+              "properties": {
+                "networkProfile": {
+                  "subnet": {
+                    "id": "[parameters('hsmSubnetId')]"
+                  },
+                  "networkInterfaces": [
+                    {
+                      "privateIpAddress": ""
+                    }
+                  ]
+                },
+                "managementNetworkProfile": {
+                  "subnet": {
+                    "id": "[parameters('managementSubnetId')]"
+                  },
+                  "networkInterfaces": [
+                    {
+                      "privateIpAddress": ""
+                    }
+                  ]
+                },
+                "stampId": "[parameters('stampId')]"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "[parameters('adminVmResourceGroupName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "purpose": "Payment HSM admin virtual machine",
+        "deployedBy": "hsm-scenario-builder"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "name": "adminVmDeployment",
+      "resourceGroup": "[parameters('adminVmResourceGroupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('adminVmResourceGroupName'))]",
+        "paymentHsmDeployment"
+      ],
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": { "value": "[parameters('location')]" },
+          "vmName": { "value": "[parameters('vmName')]" },
+          "vmSize": { "value": "[parameters('vmSize')]" },
+          "vmImagePublisher": { "value": "[parameters('vmImagePublisher')]" },
+          "vmImageOffer": { "value": "[parameters('vmImageOffer')]" },
+          "vmImageSku": { "value": "[parameters('vmImageSku')]" },
+          "vmImageVersion": { "value": "[parameters('vmImageVersion')]" },
+          "adminUsername": { "value": "[parameters('adminUsername')]" },
+          "authenticationType": { "value": "[parameters('authenticationType')]" },
+          "adminPasswordOrKey": { "value": "[parameters('adminPasswordOrKey')]" },
+          "subnetId": { "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('subnetName'))]" }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "vmName": { "type": "string" },
+            "vmSize": { "type": "string" },
+            "vmImagePublisher": { "type": "string" },
+            "vmImageOffer": { "type": "string" },
+            "vmImageSku": { "type": "string" },
+            "vmImageVersion": { "type": "string" },
+            "adminUsername": { "type": "string" },
+            "authenticationType": { "type": "string" },
+            "adminPasswordOrKey": { "type": "secureString" },
+            "subnetId": { "type": "string" }
+          },
+          "variables": {
+            "nsgName": "[format('{0}-nsg', parameters('vmName'))]",
+            "nicName": "[format('{0}-nic', parameters('vmName'))]",
+            "pipName": "[format('{0}-pip', parameters('vmName'))]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                    "keyData": "[parameters('adminPasswordOrKey')]"
+                  }
+                ]
+              }
+            }
+          },
+          "resources": [
+
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nsgName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "AllowSSH",
+                    "properties": {
+                      "priority": 1000,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "22"
+                    }
+                  },
+                  {
+                    "name": "AllowRDP",
+                    "properties": {
+                      "priority": 1001,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "3389"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('pipName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2023-11-01",
+              "name": "[variables('nicName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+              ],
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+                      }
+                    }
+                  }
+                ],
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2024-03-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+              ],
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                  "imageReference": {
+                    "publisher": "[parameters('vmImagePublisher')]",
+                    "offer": "[parameters('vmImageOffer')]",
+                    "sku": "[parameters('vmImageSku')]",
+                    "version": "[parameters('vmImageVersion')]"
+                  },
+                  "osDisk": {
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "Premium_LRS"
+                    }
+                  }
+                },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPasswordOrKey')]",
+                  "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'sshPublicKey'), variables('linuxConfiguration'), json('null'))]"
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "privateIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]"
+            },
+            "publicIpAddress": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))).ipAddress]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "paymentHsmName": {
+      "type": "string",
+      "value": "[variables('paymentHsmNameResolved')]"
+    },
+    "paymentHsmResourceId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.HardwareSecurityModules/dedicatedHSMs/{2}', subscription().subscriptionId, parameters('serverResourceGroupName'), variables('paymentHsmNameResolved'))]"
+    },
+    "vnetResourceId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'))]"
+    },
+    "hsmSubnetId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('hsmSubnetName'))]"
+    },
+    "managementSubnetId": {
+      "type": "string",
+      "value": "[format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', subscription().subscriptionId, parameters('clientResourceGroupName'), parameters('vnetName'), parameters('managementSubnetName'))]"
+    },
+    "clientResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('clientResourceGroupName')]"
+    },
+    "serverResourceGroupName": {
+      "type": "string",
+      "value": "[parameters('serverResourceGroupName')]"
+    },
+    "adminVmResourceGroupName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('adminVmResourceGroupName')]"
+    },
+    "adminVmName": {
+      "condition": "[not(empty(parameters('adminPasswordOrKey')))]",
+      "type": "string",
+      "value": "[parameters('vmName')]"
+    }
+  }
+}

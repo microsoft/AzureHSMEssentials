@@ -1,0 +1,109 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Adds a Point-to-Site VPN Gateway to an existing HSM Scenario Builder VNet. Creates a GatewaySubnet, public IP, and VPN Gateway with OpenVPN protocol. Use setup-vpn-certs.ps1 after deployment to generate certificates and configure the VPN client."
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": { "description": "Azure region (must match the existing VNet)." }
+    },
+    "existingVnetName": {
+      "type": "string",
+      "metadata": { "description": "Name of the existing VNet to add the VPN Gateway to." }
+    },
+    "vpnGatewayName": {
+      "type": "string",
+      "metadata": { "description": "Name for the VPN Gateway resource." }
+    },
+    "vpnGatewaySku": {
+      "type": "string",
+      "defaultValue": "VpnGw1AZ",
+      "allowedValues": [ "VpnGw1", "VpnGw2", "VpnGw3", "VpnGw4", "VpnGw5", "VpnGw1AZ", "VpnGw2AZ", "VpnGw3AZ", "VpnGw4AZ", "VpnGw5AZ" ],
+      "metadata": { "description": "SKU/size for the VPN Gateway. Use AZ SKUs in regions that support availability zones; non-AZ SKUs (e.g. VpnGw1) for regions that do not." }
+    },
+    "enableAvailabilityZones": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": { "description": "Set to true in regions that support availability zones. Adds zone redundancy to the gateway public IP." }
+    },
+    "vpnClientAddressPool": {
+      "type": "string",
+      "defaultValue": "192.168.100.0/24",
+      "metadata": { "description": "CIDR address pool assigned to VPN clients (e.g. 192.168.100.0/24)." }
+    }
+  },
+  "variables": {
+    "gatewayPublicIpName": "[concat(parameters('vpnGatewayName'), '-pip')]",
+    "gatewaySubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('existingVnetName'), 'GatewaySubnet')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('gatewayPublicIpName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "zones": "[if(parameters('enableAvailabilityZones'), createArray('1', '2', '3'), createArray())]",
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworkGateways",
+      "apiVersion": "2023-11-01",
+      "name": "[parameters('vpnGatewayName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('gatewayPublicIpName'))]"
+      ],
+      "properties": {
+        "gatewayType": "Vpn",
+        "vpnType": "RouteBased",
+        "vpnGatewayGeneration": "Generation2",
+        "enableBgp": false,
+        "sku": {
+          "name": "[parameters('vpnGatewaySku')]",
+          "tier": "[parameters('vpnGatewaySku')]"
+        },
+        "ipConfigurations": [
+          {
+            "name": "default",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('gatewaySubnetRef')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('gatewayPublicIpName'))]"
+              }
+            }
+          }
+        ],
+        "vpnClientConfiguration": {
+          "vpnClientAddressPool": {
+            "addressPrefixes": [
+              "[parameters('vpnClientAddressPool')]"
+            ]
+          },
+          "vpnClientProtocols": [ "OpenVPN" ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "vpnGatewayName": {
+      "type": "string",
+      "value": "[parameters('vpnGatewayName')]"
+    },
+    "vpnGatewayPublicIp": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('gatewayPublicIpName'))).ipAddress]"
+    },
+    "vpnClientAddressPool": {
+      "type": "string",
+      "value": "[parameters('vpnClientAddressPool')]"
+    }
+  }
+}
