@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"debug.internalConsoleOptions": "neverOpen",
+		"files.trimTrailingWhitespace": true,
+		"files.insertFinalNewline": true
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-vscode.powershell",
+			"ms-azuretools.vscode-bicep",
+			"ms-azuretools.vscode-azurefunctions",
+			"ms-python.python"
+		]
+	}
+}
