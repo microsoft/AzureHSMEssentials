@@ -117,7 +117,7 @@
     },
     "vmSize": {
       "type": "string",
-      "defaultValue": "Standard_D2s_v3",
+      "defaultValue": "Standard_D2s_v5",
       "metadata": {
         "description": "Size of the admin virtual machine (2 vCPUs, 8 GiB memory)."
       }
@@ -347,7 +347,7 @@
                 },
                 "managementNetworkProfile": {
                   "subnet": {
-                    "id": "[parameters('managementSubnetId')]"
+                    "id": "[parameters('hsmSubnetId')]"
                   },
                   "networkInterfaces": [
                     {

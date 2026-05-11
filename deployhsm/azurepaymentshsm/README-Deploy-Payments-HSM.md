@@ -56,9 +56,11 @@ Azure Payment HSM uses **VNet injection** (not private endpoints). The HSM is de
 ```
 VNet (10.4.0.0/16)
 ├── default          (10.4.0.0/24) -- Admin VM, general resources
-├── hsmSubnet        (10.4.1.0/24) -- Delegated to dedicatedHSMs (data plane)
-└── hsmMgmtSubnet    (10.4.2.0/24) -- Delegated to dedicatedHSMs (management plane)
+├── hsmSubnet        (10.4.1.0/24) -- Delegated to dedicatedHSMs (data + management plane)
+└── hsmMgmtSubnet    (10.4.2.0/24) -- Delegated to dedicatedHSMs (reserved for future use)
 ```
+
+> **Note on subnets:** When the HSM data and management interfaces share a single VNet, the Azure Payment HSM resource provider currently requires both `NetworkProfile` and `ManagementNetworkProfile` to reference the **same** subnet ID (otherwise validation fails with `The subnet ids specified in the NetworkProfile and ManagementNetworkProfile must be same or the virtual networks must be different`). The template binds both profiles to `hsmSubnet`. The separately delegated `hsmMgmtSubnet` is provisioned in the VNet but is not currently bound to the HSM -- it is reserved for future multi-VNet topologies.
 
 ## Deployment
 
@@ -98,7 +100,7 @@ New-AzSubscriptionDeployment `
 | **Use Cases** | PIN processing, payment credential issuing, transaction authorization | General-purpose key storage, TLS offloading, code signing |
 | **Certification** | PCI HSM v3, PCI DSS, PCI 3DS | FIPS 140-2 Level 3 |
 | **SKUs** | payShield10K (6 variants) | SafeNet Luna A790 |
-| **Management Subnet** | Required (separate delegated subnet) | Not required |
+| **Management Subnet** | Required delegation; must share subnet ID with data profile when in one VNet | Not required |
 | **Resource Provider** | `Microsoft.HardwareSecurityModules/dedicatedHSMs` | Same |
 | **API Version** | `2021-11-30` | Same |
 
