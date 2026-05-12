@@ -25,13 +25,13 @@ Give it to PMs, engineers, or field teams so they can spin up a fully-configured
 
 ### Supported Platforms
 
-| Platform                      | Description                                 | Key Features                                                                                        |
-| ----------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **Azure Cloud HSM**     | Thales Luna Network HSM 7 (cloud-managed)   | Private endpoint, DNS zone, VNet, diagnostic logging, optional admin VM                             |
-| **Azure Dedicated HSM** | Thales SafeNet Luna A790 (bare-metal)       | VNet injection, ExpressRoute gateway, delegated hsmSubnet, optional admin VM                        |
-| **Azure Key Vault**     | Premium SKU with HSM-backed keys            | Private endpoint, DNS zone, VNet, Entra ID RBAC, diagnostic logging, optional admin VM              |
-| **Azure Managed HSM**   | FIPS 140-2 Level 3, Entra ID RBAC-only      | Private endpoint, DNS zone, VNet, security domain activation, diagnostic logging, optional admin VM |
-| **Azure Payment HSM**   | Thales payShield 10K for payment processing | VNet injection, separate data/management subnets, optional admin VM                                 |
+| Platform                      | Description                                                   | Key Features                                                                                        |
+| ----------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Azure Cloud HSM**     | FIPS 140-3 Level 3 HSM Cluster (Standard_B1)                  | Private endpoint, DNS zone, VNet, diagnostic logging, optional admin VM                             |
+| **Azure Dedicated HSM** | Thales SafeNet Luna A790 (bare-metal)                         | VNet injection, ExpressRoute gateway, delegated hsmSubnet, optional admin VM                        |
+| **Azure Key Vault**     | Premium SKU with HSM-backed keys                              | Private endpoint, DNS zone, VNet, Entra ID RBAC, diagnostic logging, optional admin VM              |
+| **Azure Managed HSM**   | FIPS 140-3 Level 3, Entra ID RBAC-only HSM Pool (Standard_B1) | Private endpoint, DNS zone, VNet, security domain activation, diagnostic logging, optional admin VM |
+| **Azure Payment HSM**   | Thales payShield 10K for payment processing (bare-metal)      | VNet injection, separate data/management subnets, optional admin VM                                 |
 
 ### What Gets Deployed
 
