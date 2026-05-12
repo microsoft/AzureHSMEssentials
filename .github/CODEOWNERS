@@ -1,0 +1,6 @@
+# Code owners for AzureHSMEssentials
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Solo maintainer for now -- split by path when more owners join.
+
+* @kprunella
