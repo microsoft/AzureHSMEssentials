@@ -49,7 +49,7 @@ The Local Network Gateway represents your on-premises VPN device in Azure.
 $onPremPublicIp    = "203.0.113.1"           # Your on-prem VPN device public IP
 $onPremAddrSpace   = @("172.16.0.0/16")      # Your on-prem network CIDR(s)
 $resourceGroup     = "CHSM-HAG-CLIENT-RG"
-$location          = "eastus2euap"            # Must match your VNet region
+$location          = "eastus2"                # Must match your VNet region
 
 New-AzLocalNetworkGateway `
     -Name "onprem-local-gateway" `
@@ -184,7 +184,7 @@ $simGw    = Get-AzVirtualNetworkGateway -Name "onprem-sim-vpn-gateway" -Resource
 New-AzVirtualNetworkGatewayConnection `
     -Name "hsm-to-onprem-sim" `
     -ResourceGroupName $hsmRg `
-    -Location "eastus2euap" `
+    -Location "eastus2" `
     -VirtualNetworkGateway1 $hsmGw `
     -VirtualNetworkGateway2 $simGw `
     -ConnectionType Vnet2Vnet `
