@@ -83,17 +83,17 @@ New-AzVirtualNetworkGatewayConnection `
 
 Configure your device with these settings:
 
-| Setting | Value |
-|---------|-------|
+| Setting           | Value                                                |
+| ----------------- | ---------------------------------------------------- |
 | Remote Gateway IP | Azure VPN Gateway public IP (from deployment output) |
-| Pre-Shared Key | Same `$sharedKey` used above |
-| IKE Version | IKEv2 |
-| IPsec Encryption | AES256 |
-| IPsec Integrity | SHA256 |
-| DH Group | DHGroup14 (2048-bit) |
-| SA Lifetime | 28800 seconds (IKE) / 3600 seconds (IPsec) |
-| Remote Network | `10.0.0.0/16` (Azure VNet address space) |
-| Local Network | `172.16.0.0/16` (your on-prem address space) |
+| Pre-Shared Key    | Same `$sharedKey` used above                       |
+| IKE Version       | IKEv2                                                |
+| IPsec Encryption  | AES256                                               |
+| IPsec Integrity   | SHA256                                               |
+| DH Group          | DHGroup14 (2048-bit)                                 |
+| SA Lifetime       | 28800 seconds (IKE) / 3600 seconds (IPsec)           |
+| Remote Network    | `10.0.0.0/16` (Azure VNet address space)           |
+| Local Network     | `172.16.0.0/16` (your on-prem address space)       |
 
 > For device-specific configuration scripts, download from the Azure Portal:
 > **VPN Gateway → Connections → s2s-to-onprem → Download configuration**
@@ -226,6 +226,7 @@ Test-NetConnection -ComputerName <private-ip> -Port 2225
 ```
 
 > **Important:** For DNS resolution of Private Link FQDNs from the simulated on-prem VNet, you need to either:
+>
 > - Link the private DNS zone (`privatelink.cloudhsm.azure.net`) to the simulated VNet, or
 > - Configure a DNS forwarder that resolves against Azure DNS (168.63.129.16)
 
@@ -249,15 +250,15 @@ Remove-AzResourceGroup -Name "CHSM-HSB-SIMSITE-RG" -Force
 
 ## Security Considerations for HSM S2S VPN
 
-| Consideration | Recommendation |
-|---------------|----------------|
-| **Pre-Shared Key** | Use a 64+ character random string; rotate periodically |
-| **IKE Version** | IKEv2 only (IKEv1 is deprecated) |
-| **IPsec Policy** | Use custom policy: AES256-GCM + SHA384 + DHGroup24 for FIPS compliance |
-| **NSG Rules** | Restrict VNet access to only necessary ports (2225 for Cloud HSM) |
-| **BGP** | Enable for dynamic routing in production multi-site scenarios |
-| **Forced Tunneling** | Consider if all HSM traffic must route through on-prem security appliances |
-| **Connection Monitoring** | Use Azure Network Watcher + Connection Monitor to alert on tunnel drops |
+| Consideration                   | Recommendation                                                             |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| **Pre-Shared Key**        | Use a 64+ character random string; rotate periodically                     |
+| **IKE Version**           | IKEv2 only (IKEv1 is deprecated)                                           |
+| **IPsec Policy**          | Use custom policy: AES256-GCM + SHA384 + DHGroup24 for FIPS compliance     |
+| **NSG Rules**             | Restrict VNet access to only necessary ports (2225 for Cloud HSM)          |
+| **BGP**                   | Enable for dynamic routing in production multi-site scenarios              |
+| **Forced Tunneling**      | Consider if all HSM traffic must route through on-prem security appliances |
+| **Connection Monitoring** | Use Azure Network Watcher + Connection Monitor to alert on tunnel drops    |
 
 ---
 
