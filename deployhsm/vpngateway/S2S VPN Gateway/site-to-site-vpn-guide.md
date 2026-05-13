@@ -48,7 +48,7 @@ The Local Network Gateway represents your on-premises VPN device in Azure.
 # Replace with your on-premises public IP and address space
 $onPremPublicIp    = "203.0.113.1"           # Your on-prem VPN device public IP
 $onPremAddrSpace   = @("172.16.0.0/16")      # Your on-prem network CIDR(s)
-$resourceGroup     = "CHSM-HAG-CLIENT-RG"
+$resourceGroup     = "CHSM-HSB-CLIENT-RG"
 $location          = "eastus2"                # Must match your VNet region
 
 New-AzLocalNetworkGateway `
@@ -83,17 +83,17 @@ New-AzVirtualNetworkGatewayConnection `
 
 Configure your device with these settings:
 
-| Setting | Value |
-|---------|-------|
+| Setting           | Value                                                |
+| ----------------- | ---------------------------------------------------- |
 | Remote Gateway IP | Azure VPN Gateway public IP (from deployment output) |
-| Pre-Shared Key | Same `$sharedKey` used above |
-| IKE Version | IKEv2 |
-| IPsec Encryption | AES256 |
-| IPsec Integrity | SHA256 |
-| DH Group | DHGroup14 (2048-bit) |
-| SA Lifetime | 28800 seconds (IKE) / 3600 seconds (IPsec) |
-| Remote Network | `10.0.0.0/16` (Azure VNet address space) |
-| Local Network | `172.16.0.0/16` (your on-prem address space) |
+| Pre-Shared Key    | Same `$sharedKey` used above                       |
+| IKE Version       | IKEv2                                                |
+| IPsec Encryption  | AES256                                               |
+| IPsec Integrity   | SHA256                                               |
+| DH Group          | DHGroup14 (2048-bit)                                 |
+| SA Lifetime       | 28800 seconds (IKE) / 3600 seconds (IPsec)           |
+| Remote Network    | `10.0.0.0/16` (Azure VNet address space)           |
+| Local Network     | `172.16.0.0/16` (your on-prem address space)       |
 
 > For device-specific configuration scripts, download from the Azure Portal:
 > **VPN Gateway → Connections → s2s-to-onprem → Download configuration**
@@ -127,7 +127,7 @@ Use this to validate S2S VPN without on-premises hardware. Deploys a second VNet
 ### Step 1 -- Create the Simulated On-Prem Environment
 
 ```powershell
-$resourceGroup  = "CHSM-HAG-SIMSITE-RG"
+$resourceGroup  = "CHSM-HSB-SIMSITE-RG"
 $location       = "eastus2"   # Can be any region
 $sharedKey      = "YourStrongPreSharedKey123!"
 
@@ -174,7 +174,7 @@ New-AzVirtualNetworkGateway `
 VNet-to-VNet requires a connection resource on each side:
 
 ```powershell
-$hsmRg = "CHSM-HAG-CLIENT-RG"
+$hsmRg = "CHSM-HSB-CLIENT-RG"
 
 # Get both gateways
 $hsmGw    = Get-AzVirtualNetworkGateway -Name "chsm-vpn-gateway"       -ResourceGroupName $hsmRg
@@ -226,6 +226,7 @@ Test-NetConnection -ComputerName <private-ip> -Port 2225
 ```
 
 > **Important:** For DNS resolution of Private Link FQDNs from the simulated on-prem VNet, you need to either:
+>
 > - Link the private DNS zone (`privatelink.cloudhsm.azure.net`) to the simulated VNet, or
 > - Configure a DNS forwarder that resolves against Azure DNS (168.63.129.16)
 
@@ -235,29 +236,29 @@ Test-NetConnection -ComputerName <private-ip> -Port 2225
 
 ```powershell
 # Remove connections
-Remove-AzVirtualNetworkGatewayConnection -Name "hsm-to-onprem-sim" -ResourceGroupName "CHSM-HAG-CLIENT-RG" -Force
-Remove-AzVirtualNetworkGatewayConnection -Name "onprem-sim-to-hsm" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
+Remove-AzVirtualNetworkGatewayConnection -Name "hsm-to-onprem-sim" -ResourceGroupName "CHSM-HSB-CLIENT-RG" -Force
+Remove-AzVirtualNetworkGatewayConnection -Name "onprem-sim-to-hsm" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
 
 # Remove simulated environment (gateway deletion takes ~10 min)
-Remove-AzVirtualNetworkGateway -Name "onprem-sim-vpn-gateway" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzPublicIpAddress -Name "onprem-sim-vpn-pip" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzVirtualNetwork -Name "onprem-sim-vnet" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzResourceGroup -Name "CHSM-HAG-SIMSITE-RG" -Force
+Remove-AzVirtualNetworkGateway -Name "onprem-sim-vpn-gateway" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzPublicIpAddress -Name "onprem-sim-vpn-pip" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzVirtualNetwork -Name "onprem-sim-vnet" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzResourceGroup -Name "CHSM-HSB-SIMSITE-RG" -Force
 ```
 
 ---
 
 ## Security Considerations for HSM S2S VPN
 
-| Consideration | Recommendation |
-|---------------|----------------|
-| **Pre-Shared Key** | Use a 64+ character random string; rotate periodically |
-| **IKE Version** | IKEv2 only (IKEv1 is deprecated) |
-| **IPsec Policy** | Use custom policy: AES256-GCM + SHA384 + DHGroup24 for FIPS compliance |
-| **NSG Rules** | Restrict VNet access to only necessary ports (2225 for Cloud HSM) |
-| **BGP** | Enable for dynamic routing in production multi-site scenarios |
-| **Forced Tunneling** | Consider if all HSM traffic must route through on-prem security appliances |
-| **Connection Monitoring** | Use Azure Network Watcher + Connection Monitor to alert on tunnel drops |
+| Consideration                   | Recommendation                                                             |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| **Pre-Shared Key**        | Use a 64+ character random string; rotate periodically                     |
+| **IKE Version**           | IKEv2 only (IKEv1 is deprecated)                                           |
+| **IPsec Policy**          | Use custom policy: AES256-GCM + SHA384 + DHGroup24 for FIPS compliance     |
+| **NSG Rules**             | Restrict VNet access to only necessary ports (2225 for Cloud HSM)          |
+| **BGP**                   | Enable for dynamic routing in production multi-site scenarios              |
+| **Forced Tunneling**      | Consider if all HSM traffic must route through on-prem security appliances |
+| **Connection Monitoring** | Use Azure Network Watcher + Connection Monitor to alert on tunnel drops    |
 
 ---
 
@@ -278,7 +279,7 @@ $ipsecPolicy = New-AzIpsecPolicy `
 
 # Apply to connection
 Set-AzVirtualNetworkGatewayConnection `
-    -VirtualNetworkGatewayConnection (Get-AzVirtualNetworkGatewayConnection -Name "s2s-to-onprem" -ResourceGroupName "CHSM-HAG-CLIENT-RG") `
+    -VirtualNetworkGatewayConnection (Get-AzVirtualNetworkGatewayConnection -Name "s2s-to-onprem" -ResourceGroupName "CHSM-HSB-CLIENT-RG") `
     -IpsecPolicies $ipsecPolicy `
     -Force
 ```
