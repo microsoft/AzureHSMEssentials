@@ -48,7 +48,7 @@ The Local Network Gateway represents your on-premises VPN device in Azure.
 # Replace with your on-premises public IP and address space
 $onPremPublicIp    = "203.0.113.1"           # Your on-prem VPN device public IP
 $onPremAddrSpace   = @("172.16.0.0/16")      # Your on-prem network CIDR(s)
-$resourceGroup     = "CHSM-HAG-CLIENT-RG"
+$resourceGroup     = "CHSM-HSB-CLIENT-RG"
 $location          = "eastus2"                # Must match your VNet region
 
 New-AzLocalNetworkGateway `
@@ -127,7 +127,7 @@ Use this to validate S2S VPN without on-premises hardware. Deploys a second VNet
 ### Step 1 -- Create the Simulated On-Prem Environment
 
 ```powershell
-$resourceGroup  = "CHSM-HAG-SIMSITE-RG"
+$resourceGroup  = "CHSM-HSB-SIMSITE-RG"
 $location       = "eastus2"   # Can be any region
 $sharedKey      = "YourStrongPreSharedKey123!"
 
@@ -174,7 +174,7 @@ New-AzVirtualNetworkGateway `
 VNet-to-VNet requires a connection resource on each side:
 
 ```powershell
-$hsmRg = "CHSM-HAG-CLIENT-RG"
+$hsmRg = "CHSM-HSB-CLIENT-RG"
 
 # Get both gateways
 $hsmGw    = Get-AzVirtualNetworkGateway -Name "chsm-vpn-gateway"       -ResourceGroupName $hsmRg
@@ -235,14 +235,14 @@ Test-NetConnection -ComputerName <private-ip> -Port 2225
 
 ```powershell
 # Remove connections
-Remove-AzVirtualNetworkGatewayConnection -Name "hsm-to-onprem-sim" -ResourceGroupName "CHSM-HAG-CLIENT-RG" -Force
-Remove-AzVirtualNetworkGatewayConnection -Name "onprem-sim-to-hsm" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
+Remove-AzVirtualNetworkGatewayConnection -Name "hsm-to-onprem-sim" -ResourceGroupName "CHSM-HSB-CLIENT-RG" -Force
+Remove-AzVirtualNetworkGatewayConnection -Name "onprem-sim-to-hsm" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
 
 # Remove simulated environment (gateway deletion takes ~10 min)
-Remove-AzVirtualNetworkGateway -Name "onprem-sim-vpn-gateway" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzPublicIpAddress -Name "onprem-sim-vpn-pip" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzVirtualNetwork -Name "onprem-sim-vnet" -ResourceGroupName "CHSM-HAG-SIMSITE-RG" -Force
-Remove-AzResourceGroup -Name "CHSM-HAG-SIMSITE-RG" -Force
+Remove-AzVirtualNetworkGateway -Name "onprem-sim-vpn-gateway" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzPublicIpAddress -Name "onprem-sim-vpn-pip" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzVirtualNetwork -Name "onprem-sim-vnet" -ResourceGroupName "CHSM-HSB-SIMSITE-RG" -Force
+Remove-AzResourceGroup -Name "CHSM-HSB-SIMSITE-RG" -Force
 ```
 
 ---
@@ -278,7 +278,7 @@ $ipsecPolicy = New-AzIpsecPolicy `
 
 # Apply to connection
 Set-AzVirtualNetworkGatewayConnection `
-    -VirtualNetworkGatewayConnection (Get-AzVirtualNetworkGatewayConnection -Name "s2s-to-onprem" -ResourceGroupName "CHSM-HAG-CLIENT-RG") `
+    -VirtualNetworkGatewayConnection (Get-AzVirtualNetworkGatewayConnection -Name "s2s-to-onprem" -ResourceGroupName "CHSM-HSB-CLIENT-RG") `
     -IpsecPolicies $ipsecPolicy `
     -Force
 ```
