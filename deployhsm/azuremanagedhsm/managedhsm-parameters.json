@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "UK West"
+      "value": "North Europe"
     },
     "clientResourceGroupName": {
       "value": "MHSM-HSB-CLIENT-RG"
@@ -60,7 +60,7 @@
       "value": "mhsm-admin-vm"
     },
     "vmSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2as_v6"
     },
     "vmImagePublisher": {
       "value": "Canonical"

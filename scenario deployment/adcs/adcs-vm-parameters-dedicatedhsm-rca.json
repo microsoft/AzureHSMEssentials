@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "Australia East"
+      "value": "North Europe"
     },
     "adcsResourceGroupName": {
       "value": "DHSM-HSB-ADCS-VM"
@@ -21,7 +21,7 @@
       "value": "dhsm-adcs-rca"
     },
     "vmSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2as_v6"
     },
     "adminUsername": {
       "value": "dhsmVMAdmin"

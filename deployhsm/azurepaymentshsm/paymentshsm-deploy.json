@@ -117,7 +117,7 @@
     },
     "vmSize": {
       "type": "string",
-      "defaultValue": "Standard_D2s_v5",
+      "defaultValue": "Standard_D2as_v6",
       "metadata": {
         "description": "Size of the admin virtual machine (2 vCPUs, 8 GiB memory)."
       }

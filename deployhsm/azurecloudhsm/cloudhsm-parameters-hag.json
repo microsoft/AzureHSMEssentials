@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "UK West"
+      "value": "North Europe"
     },
     "clientResourceGroupName": {
       "value": "CHSM-HAG-CLIENT-RG"
@@ -45,7 +45,7 @@
       "value": "chsm-admin-vm"
     },
     "vmSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2as_v6"
     },
     "vmImagePublisher": {
       "value": "Canonical"
