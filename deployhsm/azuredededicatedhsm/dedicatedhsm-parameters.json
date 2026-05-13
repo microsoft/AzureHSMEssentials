@@ -45,7 +45,7 @@
       "value": "dhsm-admin-vm"
     },
     "vmSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2as_v6"
     },
     "vmImagePublisher": {
       "value": "RedHat"

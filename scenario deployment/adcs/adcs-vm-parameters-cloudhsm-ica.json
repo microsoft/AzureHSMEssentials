@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "UK West"
+      "value": "North Europe"
     },
     "adcsResourceGroupName": {
       "value": "CHSM-HSB-ADCS-VM"
@@ -21,7 +21,7 @@
       "value": "chsm-adcs-ica"
     },
     "vmSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2as_v6"
     },
     "adminUsername": {
       "value": "chsmVMAdmin"

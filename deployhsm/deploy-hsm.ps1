@@ -438,6 +438,33 @@ try {
         }
     }
 
+    # Pre-flight: validate first so we get the inner error directly, not
+    # an opaque "InvalidTemplateDeployment ... See inner errors for details."
+    # Test-AzSubscriptionDeployment returns validation errors as objects
+    # rather than throwing, so we can format them ourselves.
+    $testParams = @{} + $deployParams
+    $testParams.Remove('Name') | Out-Null
+    $testParams.Remove('Verbose') | Out-Null
+    $testParams['ErrorAction'] = 'SilentlyContinue'
+    $validationErrors = Test-AzSubscriptionDeployment @testParams
+    if ($validationErrors) {
+        Write-Host ""
+        Write-Host "================================================" -ForegroundColor Red
+        Write-Host "  Validation Failed - $displayName" -ForegroundColor Red
+        Write-Host "================================================" -ForegroundColor Red
+        Write-Host ""
+        foreach ($err in $validationErrors) {
+            Write-Host ("  [{0}] {1}" -f $err.Code, $err.Message) -ForegroundColor Red
+            if ($err.Details) {
+                foreach ($d in $err.Details) {
+                    Write-Host ("    - [{0}] {1}" -f $d.Code, $d.Message) -ForegroundColor Yellow
+                }
+            }
+        }
+        Write-Host ""
+        exit 1
+    }
+
     $result = New-AzSubscriptionDeployment @deployParams
 
     # Double-check provisioning state even if no exception was thrown
@@ -711,6 +738,30 @@ catch {
         Write-Host ""
         Write-Host $errMsg -ForegroundColor Red
         Write-Host ""
+
+        # Surface the real ARM inner error -- $_.Exception.Message often only
+        # says 'InvalidTemplateDeployment ... See inner errors for details.'
+        # The actual cause lives in the failed deployment operation(s).
+        try {
+            $ops = Get-AzDeploymentOperation -DeploymentName $deploymentName -ErrorAction SilentlyContinue |
+                   Where-Object { $_.ProvisioningState -eq 'Failed' }
+            if ($ops) {
+                Write-Host "Inner error(s):" -ForegroundColor Yellow
+                foreach ($op in $ops) {
+                    $tgt = $op.TargetResource
+                    if (-not $tgt) { $tgt = '<subscription-scope>' }
+                    $code = $op.StatusMessage.error.code
+                    $msg  = $op.StatusMessage.error.message
+                    if (-not $msg) { $msg = ($op.StatusMessage | ConvertTo-Json -Depth 6 -Compress) }
+                    Write-Host ("  [{0}] {1}" -f $code, $tgt) -ForegroundColor Red
+                    Write-Host ("    {0}" -f $msg) -ForegroundColor Red
+                }
+                Write-Host ""
+            }
+        } catch {
+            # Best-effort; do not mask the original failure
+        }
+
         Write-Host "Check the deployment in the Azure Portal:" -ForegroundColor Yellow
         Write-Host ('  Subscriptions > ' + $SubscriptionId + ' > Deployments > ' + $deploymentName) -ForegroundColor Yellow
         exit 1

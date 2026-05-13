@@ -51,7 +51,7 @@
       "value": "phsm-admin-vm"
     },
     "vmSize": {
-      "value": "Standard_D2s_v5"
+      "value": "Standard_D2as_v6"
     },
     "vmImagePublisher": {
       "value": "Canonical"
